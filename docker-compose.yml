@@ -3,7 +3,8 @@ services:
   notion-nav:
     image: twoice/notion-nav:latest
     container_name: notion-nav
-    network_mode: host
+    ports:
+      - "3000:3000"
     environment:
       - NODE_ENV=production
       - NOTION_API_KEY=${NOTION_API_KEY}
