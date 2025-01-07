@@ -7,13 +7,18 @@ export const metadata: Metadata = {
   description: '基于 Notion 数据库的现代化导航网站',
   keywords: 'Notion, 导航, 网址导航, 收藏夹',
   authors: [{ name: 'Your Name' }],
-  viewport: 'width=device-width, initial-scale=1',
   robots: 'index, follow',
   icons: {
     icon: '/favicon.ico',
     apple: '/apple-touch-icon.png',
   },
   manifest: '/manifest.json',
+}
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
 }
 
 export default function RootLayout({

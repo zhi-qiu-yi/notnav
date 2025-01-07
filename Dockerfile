@@ -20,7 +20,7 @@ RUN mkdir -p public
 RUN npm run lint
 
 # 构建应用
-RUN npm run build
+RUN NODE_ENV=production npm run build
 
 # 生产环境
 FROM node:18-alpine AS runner
