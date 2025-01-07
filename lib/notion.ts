@@ -21,8 +21,9 @@ export interface Link {
   title: string;
   description: string;
   category: string;
-  icon: string;
+  icon?: string;
   link: string;
+  lanlink?: string;
   created_time: string;
 }
 
@@ -47,6 +48,10 @@ interface NotionLinkProperties {
   cat: SelectPropertyItemObjectResponse;
   icon: FilesPropertyItemObjectResponse;
   link: {
+    type: "url";
+    url: string | null;
+  };
+  lanlink: {
     type: "url";
     url: string | null;
   };
@@ -98,6 +103,7 @@ export const getLinks = unstable_cache(
               category: properties.cat?.select?.name || '',
               icon: iconUrl,
               link: properties.link?.url || '',
+              lanlink: properties.lanlink?.url || '',
               created_time: page.created_time,
             };
           } catch (error) {
