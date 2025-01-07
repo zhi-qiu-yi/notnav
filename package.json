@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "docker:build": "docker build -t $DOCKER_USERNAME/notion-nav:latest .",
+    "docker:push": "docker push $DOCKER_USERNAME/notion-nav:latest"
   },
   "dependencies": {
     "@notionhq/client": "^2.2.14",

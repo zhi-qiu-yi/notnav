@@ -9,7 +9,7 @@ export default async function Home() {
     // 使用 Promise.all 并添加错误处理
     const [links, dbInfo, config] = await Promise.all([
       getLinks().catch(() => []),
-      getDatabaseInfo().catch(() => ({ icon: null, cover: null })),
+      getDatabaseInfo().catch(() => ({ icon: undefined, cover: undefined })),
       getConfig().catch(() => [])
     ]);
 

@@ -165,7 +165,12 @@ export async function getLinks(): Promise<Link[]> {
   }
 }
 
-export async function getDatabaseInfo() {
+interface DatabaseInfo {
+  icon: string | undefined;
+  cover: string | undefined;
+}
+
+export async function getDatabaseInfo(): Promise<DatabaseInfo> {
   try {
     const response = await notion.databases.retrieve({
       database_id: process.env.NOTION_DATABASE_ID!,
