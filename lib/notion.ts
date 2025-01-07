@@ -145,8 +145,15 @@ export async function getLinks(): Promise<Link[]> {
           const iconUrl = fileUrl?.type === 'file' ? fileUrl.file.url :
                          fileUrl?.type === 'external' ? fileUrl.external.url : '';
 
-          const title = properties.title?.title?.[0]?.plain_text || '';
-          const description = properties.desp?.rich_text?.[0]?.plain_text || '';
+          const titleProperty = properties.title?.title;
+          const title = Array.isArray(titleProperty) && titleProperty.length > 0 
+            ? titleProperty[0].plain_text 
+            : '';
+
+          const richTextProperty = properties.desp?.rich_text;
+          const description = Array.isArray(richTextProperty) && richTextProperty.length > 0
+            ? richTextProperty[0].plain_text
+            : '';
 
           return {
             id: page.id,
