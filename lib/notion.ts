@@ -60,8 +60,6 @@ export async function getConfig(): Promise<ConfigItem[]> {
       ]
     }) as QueryDatabaseResponse;
 
-    console.log('Raw response:', JSON.stringify(response.results[0]?.properties, null, 2));
-
     const configs = response.results
       .filter((page): page is PageObjectResponse => 'properties' in page)
       .map((page: PageObjectResponse) => {
@@ -71,15 +69,7 @@ export async function getConfig(): Promise<ConfigItem[]> {
         const title = properties.title?.title?.[0]?.plain_text;
         const value = properties.value?.number;
 
-        console.log('Processing config:', {
-          pageId: page.id,
-          type,
-          title,
-          value
-        });
-
         if (!type || !title) {
-          console.warn('Missing required properties:', { pageId: page.id, type, title });
           return null;
         }
 
@@ -91,13 +81,9 @@ export async function getConfig(): Promise<ConfigItem[]> {
       })
       .filter((item): item is ConfigItem => item !== null);
 
-    console.log('Final configs:', JSON.stringify(configs, null, 2));
     return configs;
   } catch (error) {
     console.error('Error fetching config:', error);
-    if (error instanceof Error) {
-      console.error('Error details:', error.message);
-    }
     return [];
   }
 }
