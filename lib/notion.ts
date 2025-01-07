@@ -1,7 +1,8 @@
 import { Client } from '@notionhq/client';
 import { 
   PageObjectResponse,
-  DatabaseObjectResponse
+  DatabaseObjectResponse,
+  QueryDatabaseResponse
 } from '@notionhq/client/build/src/api-endpoints';
 
 const notion = new Client({
@@ -57,13 +58,13 @@ export async function getConfig(): Promise<ConfigItem[]> {
           direction: "ascending"
         }
       ]
-    });
+    }) as QueryDatabaseResponse;
 
     console.log('Raw response:', JSON.stringify(response.results[0]?.properties, null, 2));
 
     const configs = response.results
       .filter((page): page is PageObjectResponse => 'properties' in page)
-      .map((page) => {
+      .map((page: PageObjectResponse) => {
         const properties = page.properties as NotionConfigProperties;
         
         const type = properties.type?.select?.name;
@@ -132,11 +133,11 @@ export async function getLinks(): Promise<Link[]> {
           { timestamp: "created_time", direction: "ascending" }
         ]
       })
-    );
+    ) as QueryDatabaseResponse;
 
     const links = response.results
       .filter((page): page is PageObjectResponse => 'properties' in page)
-      .map((page) => {
+      .map((page: PageObjectResponse) => {
         try {
           const properties = page.properties as any;
 

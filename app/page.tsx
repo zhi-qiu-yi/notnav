@@ -5,16 +5,6 @@ import ErrorBoundary from './components/ErrorBoundary';
 // 强制动态渲染
 export const dynamic = 'force-dynamic';
 
-// 错误边界
-export function ErrorBoundaryPage() {
-  return (
-    <ErrorBoundary
-      error={new Error('加载出错，请稍后重试')}
-      reset={() => window.location.reload()}
-    />
-  );
-}
-
 export default async function Home() {
   try {
     console.group('🔄 初始化数据');
@@ -48,8 +38,6 @@ export default async function Home() {
       const orderA = categoryOrder[catA];
       const orderB = categoryOrder[catB];
 
-      console.log(`比较分类: "${catA}" (${orderA}) vs "${catB}" (${orderB})`);
-
       // 如果两个分类都有排序值
       if (orderA !== undefined && orderB !== undefined) {
         return orderA - orderB;
@@ -64,11 +52,6 @@ export default async function Home() {
       return timeA - timeB;
     });
 
-    // 打印排序结果
-    console.log('排序前:', [...new Set(links.map(l => `${l.category}(${categoryOrder[l.category] ?? "未配置"})`))]); 
-    console.log('排序后:', [...new Set(sortedLinks.map(l => `${l.category}(${categoryOrder[l.category] ?? "未配置"})`))]); 
-    console.groupEnd();
-
     return (
       <main>
         <Navigation links={sortedLinks} icon={icon} cover={cover} />
@@ -76,6 +59,6 @@ export default async function Home() {
     );
   } catch (error) {
     console.error('❌ 错误:', error);
-    return <ErrorBoundaryPage />;
+    throw error; // 让错误边界处理错误
   }
 } 
