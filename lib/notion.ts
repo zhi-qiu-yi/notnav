@@ -3,10 +3,12 @@ import {
   PageObjectResponse,
   DatabaseObjectResponse,
   QueryDatabaseResponse,
-  PropertyValueMap,
   SelectPropertyItemObjectResponse,
   TitlePropertyItemObjectResponse,
-  NumberPropertyItemObjectResponse
+  NumberPropertyItemObjectResponse,
+  RichTextItemResponse,
+  FileWithCaption,
+  ExternalFileWithCaption
 } from '@notionhq/client/build/src/api-endpoints';
 
 const notion = new Client({
@@ -23,20 +25,35 @@ export interface Link {
   created_time: string;
 }
 
-interface NotionConfigProperties extends PropertyValueMap {
+interface NotionConfigProperties {
   type: SelectPropertyItemObjectResponse;
   title: TitlePropertyItemObjectResponse;
   value: NumberPropertyItemObjectResponse;
 }
 
-// 配置项类型
 interface ConfigItem {
   type: 'order' | 'url_order';
   title: string;
   value: number;
 }
 
-// 获取配置信息
+interface NotionLinkProperties {
+  title: TitlePropertyItemObjectResponse;
+  desp: {
+    type: "rich_text";
+    rich_text: Array<RichTextItemResponse>;
+  };
+  cat: SelectPropertyItemObjectResponse;
+  icon: {
+    type: "files";
+    files: Array<FileWithCaption | ExternalFileWithCaption>;
+  };
+  link: {
+    type: "url";
+    url: string | null;
+  };
+}
+
 export async function getConfig(): Promise<ConfigItem[]> {
   try {
     const response = await notion.databases.query({
@@ -88,7 +105,6 @@ export async function getConfig(): Promise<ConfigItem[]> {
   }
 }
 
-// 添加重试函数
 async function retryOperation<T>(
   operation: () => Promise<T>,
   retries = 3,
@@ -103,14 +119,6 @@ async function retryOperation<T>(
     }
     throw error;
   }
-}
-
-interface NotionLinkProperties extends PropertyValueMap {
-  title: TitlePropertyItemObjectResponse;
-  desp: { type: "rich_text", rich_text: Array<{ plain_text: string }> };
-  cat: SelectPropertyItemObjectResponse;
-  icon: { type: "files", files: Array<{ file?: { url: string }, external?: { url: string } }> };
-  link: { type: "url", url: string | null };
 }
 
 export async function getLinks(): Promise<Link[]> {
