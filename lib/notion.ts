@@ -7,8 +7,7 @@ import {
   TitlePropertyItemObjectResponse,
   NumberPropertyItemObjectResponse,
   RichTextItemResponse,
-  FileWithCaption,
-  ExternalFileWithCaption
+  FilesPropertyItemObjectResponse
 } from '@notionhq/client/build/src/api-endpoints';
 
 const notion = new Client({
@@ -44,10 +43,7 @@ interface NotionLinkProperties {
     rich_text: Array<RichTextItemResponse>;
   };
   cat: SelectPropertyItemObjectResponse;
-  icon: {
-    type: "files";
-    files: Array<FileWithCaption | ExternalFileWithCaption>;
-  };
+  icon: FilesPropertyItemObjectResponse;
   link: {
     type: "url";
     url: string | null;
@@ -142,13 +138,16 @@ export async function getLinks(): Promise<Link[]> {
         try {
           const properties = page.properties as unknown as NotionLinkProperties;
 
+          const fileUrl = properties.icon?.files?.[0];
+          const iconUrl = fileUrl?.type === 'file' ? fileUrl.file.url :
+                         fileUrl?.type === 'external' ? fileUrl.external.url : '';
+
           return {
             id: page.id,
             title: properties.title?.title?.[0]?.plain_text || '',
             description: properties.desp?.rich_text?.[0]?.plain_text || '',
             category: properties.cat?.select?.name || '',
-            icon: properties.icon?.files?.[0]?.file?.url || 
-                  properties.icon?.files?.[0]?.external?.url || '',
+            icon: iconUrl,
             link: properties.link?.url || '',
             created_time: page.created_time,
           };
