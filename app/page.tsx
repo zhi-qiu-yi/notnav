@@ -1,27 +1,18 @@
 import { getLinks, getDatabaseInfo, getConfig } from '@/lib/notion';
 import Navigation from './components/Navigation';
-import ErrorBoundary from './components/ErrorBoundary';
 
 // 强制动态渲染
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
   try {
+    // 使用 Promise.all 并添加错误处理
     const [links, dbInfo, config] = await Promise.all([
       getLinks().catch(() => []),
       getDatabaseInfo().catch(() => ({ icon: null, cover: null })),
       getConfig().catch(() => [])
     ]);
 
-    console.group('🔄 初始化数据');
-    const [links, { icon, cover }, config] = await Promise.all([
-      getLinks(),
-      getDatabaseInfo(),
-      getConfig()
-    ]);
-    console.groupEnd();
-
-    console.group('📋 配置信息');
     // 创建分类排序映射
     const categoryOrder = config.reduce<Record<string, number>>((acc, item) => {
       if (item.type === 'order') {
@@ -30,11 +21,6 @@ export default async function Home() {
       return acc;
     }, {});
 
-    console.log('分类排序配置:', categoryOrder);
-    console.log('现有分类:', [...new Set(links.map(l => l.category))]);
-    console.groupEnd();
-
-    console.group('🔀 排序过程');
     // 对链接进行排序
     const sortedLinks = [...links].sort((a, b) => {
       const catA = a.category.trim();
@@ -60,7 +46,11 @@ export default async function Home() {
 
     return (
       <main>
-        <Navigation links={sortedLinks} icon={icon} cover={cover} />
+        <Navigation 
+          links={sortedLinks} 
+          icon={dbInfo.icon} 
+          cover={dbInfo.cover} 
+        />
       </main>
     );
   } catch (error) {
