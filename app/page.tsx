@@ -1,12 +1,15 @@
+import { Suspense } from 'react';
 import { getLinks, getDatabaseInfo, getConfig } from '@/lib/notion';
 import Navigation from './components/Navigation';
+import Loading from './loading';
 
 // 强制动态渲染
 export const dynamic = 'force-dynamic';
+export const revalidate = 3600; // 1小时重新验证
 
 export default async function Home() {
   try {
-    // 使用 Promise.all 并添加错误处理
+    // 并行请求数据
     const [links, dbInfo, config] = await Promise.all([
       getLinks().catch(() => []),
       getDatabaseInfo().catch(() => ({ icon: undefined, cover: undefined })),
@@ -45,13 +48,15 @@ export default async function Home() {
     });
 
     return (
-      <main>
-        <Navigation 
-          links={sortedLinks} 
-          icon={dbInfo.icon} 
-          cover={dbInfo.cover} 
-        />
-      </main>
+      <Suspense fallback={<Loading />}>
+        <main>
+          <Navigation 
+            links={sortedLinks} 
+            icon={dbInfo.icon} 
+            cover={dbInfo.cover} 
+          />
+        </main>
+      </Suspense>
     );
   } catch (error) {
     console.error('❌ 错误:', error);

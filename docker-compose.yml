@@ -12,9 +12,15 @@ services:
       - NOTION_API_KEY=${NOTION_API_KEY}
       - NOTION_DATABASE_ID=${NOTION_DATABASE_ID}
       - NOTION_CONFIG_DATABASE_ID=${NOTION_CONFIG_DATABASE_ID}
+      - REVALIDATE_INTERVAL=3600
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--spider", "http://localhost:3000"]
       interval: 30s
       timeout: 10s
-      retries: 3 
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M 

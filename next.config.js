@@ -9,10 +9,19 @@ const nextConfig = {
       'googleusercontent.com'
     ],
   },
-  swcMinify: false,
+  swcMinify: true,
   compiler: {
-    removeConsole: false,
-  }
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
+  experimental: {
+    optimizeCss: true,
+    turbo: {
+      loaders: {
+        '.svg': ['@svgr/webpack'],
+      },
+    },
+  },
+  poweredByHeader: false,
 }
 
 module.exports = nextConfig 
