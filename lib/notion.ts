@@ -40,7 +40,7 @@ interface NotionLinkProperties {
   title: TitlePropertyItemObjectResponse;
   desp: {
     type: "rich_text";
-    rich_text: Array<RichTextItemResponse>;
+    rich_text: RichTextItemResponse[];
   };
   cat: SelectPropertyItemObjectResponse;
   icon: FilesPropertyItemObjectResponse;
@@ -75,7 +75,8 @@ export async function getConfig(): Promise<ConfigItem[]> {
           const properties = page.properties as unknown as NotionConfigProperties;
           
           const type = properties.type?.select?.name;
-          const title = properties.title?.title?.[0]?.plain_text;
+          const titleArray = properties.title?.title || [];
+          const title = titleArray.length > 0 ? titleArray[0].plain_text : undefined;
           const value = properties.value?.number;
 
           if (!type || !title) {
@@ -142,10 +143,16 @@ export async function getLinks(): Promise<Link[]> {
           const iconUrl = fileUrl?.type === 'file' ? fileUrl.file.url :
                          fileUrl?.type === 'external' ? fileUrl.external.url : '';
 
+          const titleArray = properties.title?.title || [];
+          const title = titleArray.length > 0 ? titleArray[0].plain_text : '';
+
+          const richTextArray = properties.desp?.rich_text || [];
+          const description = richTextArray.length > 0 ? richTextArray[0].plain_text : '';
+
           return {
             id: page.id,
-            title: properties.title?.title?.[0]?.plain_text || '',
-            description: properties.desp?.rich_text?.[0]?.plain_text || '',
+            title: title,
+            description: description,
             category: properties.cat?.select?.name || '',
             icon: iconUrl,
             link: properties.link?.url || '',
