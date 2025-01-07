@@ -27,6 +27,17 @@ export interface Link {
   created_time: string;
 }
 
+export type NotionLink = {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  icon: string;
+  link: string;
+  lanlink: string;
+  created_time: string;
+} | null;
+
 interface NotionConfigProperties {
   type: SelectPropertyItemObjectResponse;
   title: TitlePropertyItemObjectResponse;
