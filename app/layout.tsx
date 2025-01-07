@@ -1,9 +1,6 @@
 import './globals.css'
-import { Inter } from 'next/font/google'
 import { Metadata } from 'next'
 import React from 'react'
-
-const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'Notion 导航站',
@@ -26,7 +23,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="zh" className="dark">
-      <body className={`${inter.className} dark:bg-gray-900`}>{children}</body>
+      <body className="dark:bg-gray-900 font-sans">
+        {children}
+      </body>
     </html>
   )
 } 
