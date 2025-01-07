@@ -9,64 +9,48 @@ export const revalidate = 3600; // 1小时重新验证
 
 export default async function Home() {
   try {
-    // 并行请求数据
-    const [links, dbInfo, config] = await Promise.all([
-      getLinks().catch(() => []),
-      getDatabaseInfo().catch(() => ({ icon: undefined, cover: undefined })),
-      getConfig().catch(() => [])
+    const [links, configs, dbInfo] = await Promise.all([
+      getLinks(),
+      getConfig(),
+      getDatabaseInfo(),
     ]);
 
     // 创建分类排序映射
-    const categoryOrder = config.reduce<Record<string, number>>((acc, item) => {
-      if (item.type === 'order') {
-        acc[item.title] = item.value;
+    const categoryOrder = configs.reduce((acc, config) => {
+      if (config.type === 'order') {
+        acc[config.title] = config.value;
       }
       return acc;
-    }, {});
+    }, {} as Record<string, number>);
 
     // 对链接进行排序
     const sortedLinks = [...links].sort((a, b) => {
-      const catA = a.category.trim();
-      const catB = b.category.trim();
+      // 确保 category 存在且不为空
+      const catA = a?.category?.trim() || '';
+      const catB = b?.category?.trim() || '';
       
-      // 获取分类的排序值
-      const orderA = categoryOrder[catA];
-      const orderB = categoryOrder[catB];
+      // 获取分类的排序值，如果没有配置则使用默认值 999
+      const orderA = categoryOrder[catA] ?? 999;
+      const orderB = categoryOrder[catB] ?? 999;
 
-      // 如果两个分类都有排序值
-      if (orderA !== undefined && orderB !== undefined) {
+      // 首先按照分类排序值排序
+      if (orderA !== orderB) {
         return orderA - orderB;
       }
-      // 如果只有一个分类有排序值
-      if (orderA !== undefined) return -1;  // A 有排序值，排在前面
-      if (orderB !== undefined) return 1;   // B 有排序值，排在前面
-      
-      // 如果都没有排序值，按时间排序
-      const timeA = new Date(a.created_time).getTime();
-      const timeB = new Date(b.created_time).getTime();
-      return timeA - timeB;
+
+      // 如果分类排序值相同，则按照分类名称字母顺序排序
+      return catA.localeCompare(catB);
     });
 
     return (
-      <Suspense fallback={<Loading />}>
-        <main>
-          <Navigation 
-            links={sortedLinks} 
-            icon={dbInfo.icon} 
-            cover={dbInfo.cover} 
-          />
-        </main>
-      </Suspense>
+      <Navigation 
+        links={sortedLinks} 
+        icon={dbInfo.icon} 
+        cover={dbInfo.cover}
+      />
     );
   } catch (error) {
-    console.error('❌ 错误:', error);
-    return (
-      <main className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">加载失败</h1>
-          <p className="text-gray-600">请检查环境变量配置是否正确</p>
-        </div>
-      </main>
-    );
+    console.error('Error in Home:', error);
+    return <div>Error loading data</div>;
   }
 } 
