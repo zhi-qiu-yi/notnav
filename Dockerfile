@@ -13,6 +13,9 @@ RUN npm install
 # 复制项目文件
 COPY . .
 
+# 创建 public 目录（如果不存在）
+RUN mkdir -p public
+
 # 类型检查
 RUN npm run lint
 
@@ -22,6 +25,9 @@ RUN npm run build
 # 生产环境
 FROM node:18-alpine AS runner
 WORKDIR /app
+
+# 创建 public 目录
+RUN mkdir -p public
 
 # 复制构建产物和必要文件
 COPY --from=builder /app/.next ./.next
