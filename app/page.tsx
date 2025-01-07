@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { getLinks, getDatabaseInfo, getConfig } from '@/lib/notion';
+import { getLinks, getDatabaseInfo, getConfig, Link } from '@/lib/notion';
 import Navigation from './components/Navigation';
 import Loading from './loading';
 
@@ -23,11 +23,14 @@ export default async function Home() {
       return acc;
     }, {} as Record<string, number>);
 
+    // 确保 links 是非空数组
+    const validLinks = links.filter((link): link is Link => link !== null);
+
     // 对链接进行排序
-    const sortedLinks = [...links].sort((a, b) => {
+    const sortedLinks = [...validLinks].sort((a, b) => {
       // 确保 category 存在且不为空
-      const catA = a?.category?.trim() || '';
-      const catB = b?.category?.trim() || '';
+      const catA = a.category?.trim() || '';
+      const catB = b.category?.trim() || '';
       
       // 获取分类的排序值，如果没有配置则使用默认值 999
       const orderA = categoryOrder[catA] ?? 999;
