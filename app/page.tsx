@@ -7,6 +7,12 @@ export const dynamic = 'force-dynamic';
 
 export default async function Home() {
   try {
+    const [links, dbInfo, config] = await Promise.all([
+      getLinks().catch(() => []),
+      getDatabaseInfo().catch(() => ({ icon: null, cover: null })),
+      getConfig().catch(() => [])
+    ]);
+
     console.group('🔄 初始化数据');
     const [links, { icon, cover }, config] = await Promise.all([
       getLinks(),
@@ -59,6 +65,13 @@ export default async function Home() {
     );
   } catch (error) {
     console.error('❌ 错误:', error);
-    throw error; // 让错误边界处理错误
+    return (
+      <main className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">加载失败</h1>
+          <p className="text-gray-600">请检查环境变量配置是否正确</p>
+        </div>
+      </main>
+    );
   }
 } 
