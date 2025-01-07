@@ -21,9 +21,9 @@ export interface Link {
   title: string;
   description: string;
   category: string;
-  icon?: string;
+  icon: string;
   link: string;
-  lanlink?: string;
+  lanlink: string;
   created_time: string;
 }
 
@@ -112,7 +112,7 @@ export const getLinks = unstable_cache(
               title,
               description,
               category: properties.cat?.select?.name || '',
-              icon: iconUrl,
+              icon: iconUrl || '',
               link: properties.link?.url || '',
               lanlink: properties.lanlink?.url || '',
               created_time: page.created_time,
