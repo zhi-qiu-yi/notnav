@@ -75,7 +75,10 @@ export async function getConfig(): Promise<ConfigItem[]> {
           const properties = page.properties as unknown as NotionConfigProperties;
           
           const type = properties.type?.select?.name;
-          const title = properties.title?.title?.[0]?.plain_text;
+          const titleProperty = properties.title?.title;
+          const title = Array.isArray(titleProperty) && titleProperty.length > 0 
+            ? titleProperty[0].plain_text 
+            : undefined;
           const value = properties.value?.number;
 
           if (!type || !title) {
