@@ -101,14 +101,38 @@ export async function getConfig(): Promise<ConfigItem[]> {
   }
 }
 
-export async function getLinks(): Promise<Link[]> {
+// 添加重试函数
+async function retryOperation<T>(
+  operation: () => Promise<T>,
+  retries = 3,
+  delay = 1000
+): Promise<T> {
   try {
-    const response = await notion.databases.query({
-      database_id: process.env.NOTION_DATABASE_ID!,
-      sorts: [
-        { timestamp: "created_time", direction: "ascending" }
-      ]
-    });
+    return await operation();
+  } catch (error) {
+    if (retries > 0) {
+      await new Promise(resolve => setTimeout(resolve, delay));
+      return retryOperation(operation, retries - 1, delay * 2);
+    }
+    throw error;
+  }
+}
+
+// 修改 getLinks 函数
+export async function getLinks(): Promise<Link[]> {
+  if (!process.env.NOTION_DATABASE_ID) {
+    throw new Error('NOTION_DATABASE_ID is not configured');
+  }
+
+  try {
+    const response = await retryOperation(() => 
+      notion.databases.query({
+        database_id: process.env.NOTION_DATABASE_ID!,
+        sorts: [
+          { timestamp: "created_time", direction: "ascending" }
+        ]
+      })
+    );
 
     const links = response.results
       .filter((page): page is PageObjectResponse => 'properties' in page)
