@@ -24,15 +24,6 @@ const nextConfig = {
   
   // 禁用 X-Powered-By 头
   poweredByHeader: false,
-
-  // 配置模块解析
-  webpack: (config) => {
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      '@': '.',
-    };
-    return config;
-  },
 }
 
 module.exports = nextConfig 

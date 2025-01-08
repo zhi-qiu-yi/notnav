@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { getLinks, getDatabaseInfo } from '@/lib/notion';
+import { getLinks, getDatabaseInfo } from '@/src/lib/notion';
 import Navigation from './components/Navigation';
 import Loading from './loading';
 

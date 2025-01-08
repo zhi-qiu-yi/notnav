@@ -20,9 +20,6 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NEXT_SHARP_PATH=/app/node_modules/sharp
 
-# 确保 tsconfig.json 存在
-RUN test -f tsconfig.json || echo '{"compilerOptions":{"baseUrl":".","paths":{"@/*":["./*"]}}}' > tsconfig.json
-
 RUN npm run build
 
 # 生产阶段 - 使用更小的基础镜像

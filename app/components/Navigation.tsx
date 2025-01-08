@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from '@/lib/notion';
+import { Link } from '@/src/lib/types';
 
 interface NavigationProps {
   links: Link[];
