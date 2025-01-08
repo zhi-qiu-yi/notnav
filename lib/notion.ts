@@ -1,3 +1,4 @@
+import { cache } from './cache';
 import { Client } from '@notionhq/client';
 import { DatabaseObjectResponse, GetDatabaseResponse } from '@notionhq/client/build/src/api-endpoints';
 
@@ -57,10 +58,13 @@ async function getCategoryOrder(): Promise<CategoryOrder> {
   }
 }
 
-// 获取链接
+// 获取链接（带缓存）
 export async function getLinks(): Promise<Link[]> {
+  const cacheKey = 'links';
+  const cachedData = cache.get<Link[]>(cacheKey);
+  if (cachedData) return cachedData;
+
   try {
-    // 同时获取链接和排序配置
     const [response, categoryOrder] = await Promise.all([
       notion.databases.query({
         database_id: process.env.NOTION_DATABASE_ID!,
@@ -79,54 +83,44 @@ export async function getLinks(): Promise<Link[]> {
       createdTime: item.created_time
     }));
 
-    // 根据配置排序
-    return links.sort((a, b) => {
-      // 首先按分类排序
+    const sortedLinks = links.sort((a, b) => {
       const orderA = categoryOrder[a.category] ?? 999;
       const orderB = categoryOrder[b.category] ?? 999;
       
-      if (orderA !== orderB) {
-        return orderA - orderB;
-      }
-      
-      // 同一分类内按标题排序
+      if (orderA !== orderB) return orderA - orderB;
       return a.title.localeCompare(b.title, 'zh-CN');
     });
 
+    cache.set(cacheKey, sortedLinks);
+    return sortedLinks;
   } catch (error) {
     console.error('Error in getLinks:', error);
     throw error;
   }
 }
 
-// 获取数据库信息
+// 获取数据库信息（带缓存）
 export async function getDatabaseInfo(): Promise<DatabaseInfo> {
+  const cacheKey = 'database_info';
+  const cachedData = cache.get<DatabaseInfo>(cacheKey);
+  if (cachedData) return cachedData;
+
   try {
     const response = await notion.databases.retrieve({
       database_id: process.env.NOTION_DATABASE_ID!,
     }) as DatabaseObjectResponse;
 
-    // 获取数据库标题
-    let dbTitle = 'Notion Nav';
-    
-    // 尝试从 response.title 获取标题
-    if ('title' in response) {
-      const titleArray = (response as any).title;
-      if (Array.isArray(titleArray) && titleArray.length > 0) {
-        dbTitle = titleArray.map(t => t.plain_text).join('');
-      }
-    }
-
-    return {
-      title: dbTitle,
+    const dbInfo = {
+      title: response.title?.[0]?.plain_text || 'Notion Nav',
       icon: getIconUrl(response),
       cover: getCoverUrl(response),
     };
+
+    cache.set(cacheKey, dbInfo);
+    return dbInfo;
   } catch (error) {
     console.error('Error in getDatabaseInfo:', error);
-    return {
-      title: 'Notion Nav',
-    };
+    return { title: 'Notion Nav' };
   }
 }
 

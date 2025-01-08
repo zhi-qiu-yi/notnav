@@ -2,31 +2,19 @@ version: '3.8'
 
 services:
   app:
-    build: 
-      context: .
-      dockerfile: Dockerfile
-      args:
-        - NODE_ENV=production
-    image: notion-nav:latest
+    image: twoice/notion-nav:latest
     container_name: notion-nav
     restart: always
-    env_file:
-      - .env.production
+    environment:
+      - NODE_ENV=production
+      - NOTION_TOKEN=${NOTION_API_KEY}
+      - NOTION_DATABASE_ID=${NOTION_DATABASE_ID}
+      - NOTION_CONFIG_DATABASE_ID=${NOTION_CONFIG_DATABASE_ID}
+      - REVALIDATE_INTERVAL=3600
     ports:
-      - "3000:3000"
+      - "10212:3000"
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000"]
       interval: 30s
       timeout: 10s
-      retries: 3
-
-  nginx:
-    image: nginx:alpine
-    container_name: notion-nav-nginx
-    restart: always
-    ports:
-      - "80:80"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      - app 
+      retries: 3 
