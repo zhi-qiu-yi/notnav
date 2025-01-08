@@ -14,13 +14,7 @@ RUN npm ci
 COPY . .
 
 # 构建应用
-RUN --mount=type=secret,id=notion_token,required=true \
-    --mount=type=secret,id=notion_database_id,required=true \
-    --mount=type=secret,id=notion_config_database_id,required=true \
-    NOTION_TOKEN=$(cat /run/secrets/notion_token) \
-    NOTION_DATABASE_ID=$(cat /run/secrets/notion_database_id) \
-    NOTION_CONFIG_DATABASE_ID=$(cat /run/secrets/notion_config_database_id) \
-    npm run build
+RUN npm run build
 
 # 生产阶段
 FROM node:18-alpine
@@ -33,10 +27,6 @@ COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/node_modules ./node_modules
-
-# 设置运行时环境变量
-ENV NODE_ENV=production
-ENV NODE_NO_WARNINGS=1
 
 # 暴露端口
 EXPOSE 3000

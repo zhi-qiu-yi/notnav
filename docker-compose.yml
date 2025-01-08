@@ -1,25 +1,17 @@
 version: '3.8'
 
-x-secrets: &secrets
-  secrets:
-    - source: notion_token
-      target: notion_token
-    - source: notion_database_id
-      target: notion_database_id
-    - source: notion_config_database_id
-      target: notion_config_database_id
-
 services:
   app:
     build: 
       context: .
       dockerfile: Dockerfile
+      args:
+        - NODE_ENV=production
     image: notion-nav:latest
     container_name: notion-nav
     restart: always
-    environment:
-      - NODE_ENV=production
-    <<: *secrets
+    env_file:
+      - .env.production
     ports:
       - "3000:3000"
     healthcheck:
@@ -37,12 +29,4 @@ services:
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
-      - app
-
-secrets:
-  notion_token:
-    file: ./secrets/notion_token.txt
-  notion_database_id:
-    file: ./secrets/notion_database_id.txt
-  notion_config_database_id:
-    file: ./secrets/notion_config_database_id.txt 
+      - app 

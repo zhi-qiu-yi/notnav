@@ -1,25 +1,17 @@
-# 开发环境文件
+# 环境变量
+.env*
+!.env.example
+
+# 开发文件
 node_modules
 .next
-.git
-.env*
-
-# 密钥文件
-secrets/
-*.key
-*.pem
-
-# 日志文件
+.DS_Store
 *.log
 
-# 系统文件
-.DS_Store
-Thumbs.db
-
-# IDE 配置文件
-.idea
+# IDE
 .vscode
+.idea
 
-# Docker 相关文件
-Dockerfile
-.dockerignore
+# 其他
+*.pem
+*.key
