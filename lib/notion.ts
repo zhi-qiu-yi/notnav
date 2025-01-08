@@ -1,15 +1,4 @@
 import { Client } from '@notionhq/client';
-import { 
-  PageObjectResponse,
-  DatabaseObjectResponse,
-  QueryDatabaseResponse,
-  SelectPropertyItemObjectResponse,
-  TitlePropertyItemObjectResponse,
-  NumberPropertyItemObjectResponse,
-  RichTextItemResponse,
-  FilesPropertyItemObjectResponse
-} from '@notionhq/client/build/src/api-endpoints';
-import { cache } from 'react';
 import { unstable_cache } from 'next/cache';
 
 const notion = new Client({
@@ -17,6 +6,7 @@ const notion = new Client({
   timeoutMs: 30000,
 });
 
+// 简化 Link 接口
 export interface Link {
   id: string;
   title: string;
@@ -25,228 +15,104 @@ export interface Link {
   icon: string;
   link: string;
   lanlink: string;
-  created_time: string;
+  createdTime: string;
 }
 
-export type NotionLink = {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  icon: string;
-  link: string;
-  lanlink: string;
-  created_time: string;
-} | null;
-
-interface NotionConfigProperties {
-  type: SelectPropertyItemObjectResponse;
-  title: TitlePropertyItemObjectResponse;
-  value: NumberPropertyItemObjectResponse;
-}
-
-interface ConfigItem {
-  type: 'order' | 'url_order';
-  title: string;
+// 配置类型
+interface SortConfig {
+  type: 'order';
   value: number;
 }
 
-interface NotionLinkProperties {
-  title: TitlePropertyItemObjectResponse;
-  desp: {
-    type: "rich_text";
-    rich_text: RichTextItemResponse[];
-  };
-  cat: SelectPropertyItemObjectResponse;
-  icon: FilesPropertyItemObjectResponse;
-  link: {
-    type: "url";
-    url: string | null;
-  };
-  lanlink: {
-    type: "url";
-    url: string | null;
-  };
-}
-
-// 缓存时间（默认1小时）
-const REVALIDATE_INTERVAL = parseInt(process.env.REVALIDATE_INTERVAL || '3600', 10);
-
-// 缓存 getLinks 函数
-export const getLinks = unstable_cache(
-  async () => {
-    if (!process.env.NOTION_DATABASE_ID) {
-      throw new Error('NOTION_DATABASE_ID is not configured');
-    }
-
-    try {
-      const response = await retryOperation(
-        () => notion.databases.query({
-          database_id: process.env.NOTION_DATABASE_ID!,
-          sorts: [{ timestamp: "created_time", direction: "ascending" }],
-          page_size: 100
-        }),
-        5,
-        2000
-      ) as QueryDatabaseResponse;
-
-      return response.results
-        .filter((page): page is PageObjectResponse => 'properties' in page)
-        .map((page: PageObjectResponse) => {
-          try {
-            const properties = page.properties as unknown as NotionLinkProperties;
-
-            const fileUrl = properties.icon?.files?.[0];
-            const iconUrl = fileUrl?.type === 'file' ? fileUrl.file.url :
-                           fileUrl?.type === 'external' ? fileUrl.external.url : '';
-
-            const titleProperty = properties.title?.title;
-            const title = Array.isArray(titleProperty) && titleProperty.length > 0 
-              ? titleProperty[0].plain_text 
-              : '';
-
-            const richTextProperty = properties.desp?.rich_text;
-            const description = Array.isArray(richTextProperty) && richTextProperty.length > 0
-              ? richTextProperty[0].plain_text
-              : '';
-
-            return {
-              id: page.id,
-              title,
-              description,
-              category: properties.cat?.select?.name || '',
-              icon: iconUrl || '',
-              link: properties.link?.url || '',
-              lanlink: properties.lanlink?.url || '',
-              created_time: page.created_time,
-            };
-          } catch (error) {
-            console.error('Error processing page:', error);
-            return null;
-          }
-        })
-        .filter((link): link is Link => link !== null);
-    } catch (error: any) {
-      console.error('Error fetching links:', {
-        message: error.message,
-        code: error.code,
-        stack: error.stack
-      });
-      return [];
-    }
-  },
-  ['links'],
-  { 
-    revalidate: REVALIDATE_INTERVAL,
-    tags: ['links']
-  }
-);
-
-// 缓存 getConfig 函数
-export const getConfig = unstable_cache(
-  async () => {
-    try {
-      const response = await notion.databases.query({
-        database_id: process.env.NOTION_CONFIG_DATABASE_ID!,
-        filter: {
-          property: "type",
-          select: { equals: "order" }
-        },
-        page_size: 50 // 限制返回数量
-      }) as QueryDatabaseResponse;
-
-      const configs = response.results
-        .filter((page): page is PageObjectResponse => 'properties' in page)
-        .map((page: PageObjectResponse) => {
-          try {
-            const properties = page.properties as unknown as NotionConfigProperties;
-            
-            const type = properties.type?.select?.name;
-            const titleProperty = properties.title?.title;
-            const title = Array.isArray(titleProperty) && titleProperty.length > 0 
-              ? titleProperty[0].plain_text 
-              : undefined;
-            const value = properties.value?.number;
-
-            if (!type || !title) {
-              return null;
-            }
-
-            return {
-              type: type as 'order' | 'url_order',
-              title: title.trim(),
-              value: value ?? 999
-            };
-          } catch (error) {
-            console.error('Error processing config:', error);
-            return null;
-          }
-        })
-        .filter((item): item is ConfigItem => item !== null);
-
-      return configs;
-    } catch (error) {
-      console.error('Error fetching config:', error);
-      return [];
-    }
-  },
-  ['config'],
-  { revalidate: REVALIDATE_INTERVAL }
-);
-
-async function retryOperation<T>(
-  operation: () => Promise<T>,
-  retries = 3,
-  initialDelay = 2000,
-  maxDelay = 10000
-): Promise<T> {
-  let lastError: any;
-  let delay = initialDelay;
-
-  for (let i = 0; i < retries; i++) {
-    try {
-      return await operation();
-    } catch (error: any) {
-      lastError = error;
-      console.warn(`Attempt ${i + 1} failed:`, error.message);
-      
-      if (i < retries - 1) {
-        delay = Math.min(delay * 2, maxDelay);
-        await new Promise(resolve => setTimeout(resolve, delay));
+// 获取配置
+async function getConfig(): Promise<Record<string, number>> {
+  try {
+    const response = await notion.databases.query({
+      database_id: process.env.NOTION_CONFIG_DATABASE_ID!,
+      filter: {
+        property: 'type',
+        select: {
+          equals: 'order'
+        }
       }
-    }
-  }
+    });
 
-  throw lastError;
+    return response.results.reduce((acc: Record<string, number>, item: any) => {
+      const title = item.properties.title?.title[0]?.plain_text;
+      const value = item.properties.value?.number;
+      if (title && typeof value === 'number') {
+        acc[title] = value;
+      }
+      return acc;
+    }, {});
+  } catch (error) {
+    console.error('Error in getConfig:', error);
+    return {};
+  }
 }
 
+// 获取链接
+export async function getLinks(): Promise<Link[]> {
+  try {
+    const [response, configs] = await Promise.all([
+      notion.databases.query({
+        database_id: process.env.NOTION_DATABASE_ID!,
+      }),
+      getConfig()
+    ]);
+
+    const links = response.results.map((item: any) => ({
+      id: item.id,
+      title: item.properties.title?.title[0]?.plain_text || '',
+      description: item.properties.desp?.rich_text[0]?.plain_text || '',
+      category: item.properties.cat?.select?.name || '未分类',
+      icon: item.properties.icon?.files[0]?.file?.url || item.properties.icon?.files[0]?.external?.url || '',
+      link: item.properties.link?.url || '',
+      lanlink: item.properties.lanlink?.url || '',
+      createdTime: item.created_time
+    }));
+
+    // 按配置排序
+    return links.sort((a, b) => {
+      // 首先按分类排序（使用配置的顺序）
+      const orderA = configs[a.category] ?? 999;
+      const orderB = configs[b.category] ?? 999;
+      
+      if (orderA !== orderB) {
+        return orderA - orderB;
+      }
+      
+      // 同一分类内按标题排序
+      return a.title.localeCompare(b.title);
+    });
+
+  } catch (error) {
+    console.error('Error in getLinks:', error);
+    throw error;
+  }
+}
+
+// 数据库信息接口
 interface DatabaseInfo {
   icon: string | undefined;
   cover: string | undefined;
   title: string;
 }
 
-// 缓存 getDatabaseInfo 函数
+// 获取数据库信息
 export const getDatabaseInfo = unstable_cache(
-  async () => {
+  async (): Promise<DatabaseInfo> => {
     try {
       const response = await notion.databases.retrieve({
         database_id: process.env.NOTION_DATABASE_ID!,
       });
-      
-      const database = response as DatabaseObjectResponse;
-      
-      const title = database.title
-        .map(item => item.plain_text)
-        .join(' ')
-        .trim() || 'Notion 导航站';
-      
+
       return {
-        icon: database.icon?.type === 'external' ? database.icon.external.url : 
-              database.icon?.type === 'file' ? database.icon.file.url : undefined,
-        cover: database.cover?.type === 'external' ? database.cover.external.url :
-               database.cover?.type === 'file' ? database.cover.file.url : undefined,
-        title: title,
+        icon: response.icon?.type === 'external' ? response.icon.external.url : 
+              response.icon?.type === 'file' ? response.icon.file.url : undefined,
+        cover: response.cover?.type === 'external' ? response.cover.external.url :
+               response.cover?.type === 'file' ? response.cover.file.url : undefined,
+        title: response.title.map(item => item.plain_text).join(' ').trim() || 'Notion 导航站',
       };
     } catch (error) {
       console.error('Error fetching database info:', error);
@@ -258,5 +124,5 @@ export const getDatabaseInfo = unstable_cache(
     }
   },
   ['database-info'],
-  { revalidate: REVALIDATE_INTERVAL }
+  { revalidate: parseInt(process.env.REVALIDATE_INTERVAL || '3600', 10) }
 ); 

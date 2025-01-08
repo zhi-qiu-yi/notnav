@@ -20,4 +20,5 @@ Thumbs.db
 
 # Docker 相关文件
 Dockerfile
-.dockerignore 
+.dockerignore
+README.md 

@@ -39,21 +39,56 @@
 └── package.json         # 项目依赖
 ```
 
-## 🚀 部署方式
+## 🚀 部署指南
 
 ### Docker 部署
 
+1. 克隆仓库
+```bash
+git clone https://github.com/TWO-ICE/notion-nav.git
+cd notion-nav
+```
+
+2. 配置环境变量
+```bash
+# 复制环境变量模板
+cp .env.example .env
+
+# 编辑 .env 文件，填入你的配置
+vim .env
+```
+
+3. 构建和运行
 ```bash
 # 构建镜像
-docker build -t notion-nav .
+docker-compose build
 
-# 运行容器
-docker run -d \
-  -p 3000:3000 \
-  -e NOTION_API_KEY=your_api_key \
-  -e NOTION_DATABASE_ID=your_database_id \
-  -e NOTION_CONFIG_DATABASE_ID=your_config_database_id \
-  notion-nav
+# 启动服务
+docker-compose up -d
+```
+
+### 手动构建和推送镜像
+
+```bash
+# 登录 Docker Hub
+docker login
+
+# 构建镜像
+docker-compose build
+
+# 推送镜像
+docker-compose push
+```
+
+### 使用预构建镜像
+
+```bash
+# 创建 .env 文件并配置环境变量
+cp .env.example .env
+
+# 拉取并运行
+docker-compose pull
+docker-compose up -d
 ```
 
 ### Nginx 配置

@@ -1,5 +1,5 @@
-# 使用 Node.js 18 作为基础镜像
-FROM node:18-alpine AS builder
+# 使用 Node.js 官方轻量级镜像
+FROM node:18-alpine
 
 # 设置工作目录
 WORKDIR /app
@@ -8,37 +8,16 @@ WORKDIR /app
 COPY package*.json ./
 
 # 安装依赖
-RUN npm install
+RUN npm ci --only=production
 
-# 复制项目文件
+# 复制源代码
 COPY . .
 
-# 创建 public 目录（如果不存在）
-RUN mkdir -p public
-
-# 类型检查
-RUN npm run lint
-
 # 构建应用
-RUN NODE_ENV=production npm run build
-
-# 生产环境
-FROM node:18-alpine AS runner
-WORKDIR /app
-
-# 创建 public 目录
-RUN mkdir -p public
-
-# 复制构建产物和必要文件
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/package*.json ./
-
-# 只安装生产依赖
-RUN npm install --production
+RUN npm run build
 
 # 暴露端口
 EXPOSE 3000
 
-# 启动应用
+# 启动命令
 CMD ["npm", "start"]

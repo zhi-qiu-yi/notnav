@@ -56,3 +56,79 @@ html {
     scroll-behavior: auto !important;
   }
 } 
+
+/* 拖拽相关样式 */
+.dragging {
+  opacity: 0.5;
+  cursor: move;
+}
+
+.drag-over {
+  border: 2px dashed #3b82f6 !important;
+  transform: scale(1.02);
+  transition: all 0.2s ease;
+}
+
+/* 移动端拖拽样式 */
+@media (hover: none) {
+  .cursor-move {
+    cursor: grab;
+  }
+  
+  .dragging {
+    cursor: grabbing;
+  }
+} 
+
+/* 配色方案样式 */
+[data-color-scheme='default'] {
+  --primary-color: #3b82f6;
+  --primary-hover: #2563eb;
+  --bg-color: #f7f7f7;
+  --dark-bg: #111827;
+}
+
+[data-color-scheme='ocean'] {
+  --primary-color: #14b8a6;
+  --primary-hover: #0d9488;
+  --bg-color: #f0fdfa;
+  --dark-bg: #042f2e;
+}
+
+[data-color-scheme='forest'] {
+  --primary-color: #10b981;
+  --primary-hover: #059669;
+  --bg-color: #ecfdf5;
+  --dark-bg: #022c22;
+}
+
+[data-color-scheme='sunset'] {
+  --primary-color: #f97316;
+  --primary-hover: #ea580c;
+  --bg-color: #fff7ed;
+  --dark-bg: #431407;
+}
+
+[data-color-scheme='midnight'] {
+  --primary-color: #a855f7;
+  --primary-hover: #9333ea;
+  --bg-color: #faf5ff;
+  --dark-bg: #3b0764;
+}
+
+/* 应用配色变量 */
+.bg-primary {
+  background-color: var(--primary-color);
+}
+
+.text-primary {
+  color: var(--primary-color);
+}
+
+.hover\:bg-primary-hover:hover {
+  background-color: var(--primary-hover);
+}
+
+.hover\:text-primary-hover:hover {
+  color: var(--primary-hover);
+} 
