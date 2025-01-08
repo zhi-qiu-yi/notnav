@@ -4,8 +4,9 @@ WORKDIR /app
 
 # 只复制依赖相关文件
 COPY package.json package-lock.json ./
-# 仅安装生产依赖
-RUN npm ci --only=production
+
+# 安装所有依赖（包括 devDependencies）
+RUN npm ci
 
 # 构建阶段
 FROM node:18-alpine AS builder
