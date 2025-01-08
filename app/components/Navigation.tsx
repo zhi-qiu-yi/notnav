@@ -19,12 +19,7 @@ export default function Navigation({ links, icon, cover, title }: NavigationProp
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLanMode, setIsLanMode] = useState(false);
   const [isClient, setIsClient] = useState(false);
-  const [viewMode, setViewMode] = useState<ViewMode>(() => {
-    if (typeof window !== 'undefined') {
-      return (localStorage.getItem('viewMode') as ViewMode) || 'grid';
-    }
-    return 'grid';
-  });
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
 
   useEffect(() => {
     setIsClient(true);
@@ -170,6 +165,10 @@ export default function Navigation({ links, icon, cover, title }: NavigationProp
 
   // 链接卡片区域的布局
   const getLayoutClasses = () => {
+    if (!isMounted) {
+      return 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4';
+    }
+
     const baseClasses = 'transition-[grid-template-columns,gap] duration-300 ease-in-out';
     switch (viewMode) {
       case 'grid':
@@ -216,6 +215,16 @@ export default function Navigation({ links, icon, cover, title }: NavigationProp
     viewMode: ViewMode;
     getActualLink: (link: Link) => string;
   }) => {
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+      setIsMounted(true);
+    }, []);
+
+    if (!isMounted) {
+      return null;
+    }
+
     return (
       <a
         key={link.id}
@@ -342,6 +351,13 @@ export default function Navigation({ links, icon, cover, title }: NavigationProp
     );
   });
 
+  // 添加客户端检测
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   return (
     <div className="flex bg-[#f7f7f7] dark:bg-gray-900 min-h-screen">
       {/* 侧边栏背景遮罩 */}
@@ -361,7 +377,7 @@ export default function Navigation({ links, icon, cover, title }: NavigationProp
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         <div className="flex flex-col h-full">
-          {/* Logo区域改为更新按钮 */}
+          {/* Logo区域 */}
           <div className="h-16 flex items-center px-6">
             <button
               onClick={handleRefresh}
@@ -395,8 +411,40 @@ export default function Navigation({ links, icon, cover, title }: NavigationProp
             </button>
           </div>
 
+          {/* 搜索栏 */}
+          <div className="px-4 pb-4">
+            <div className="relative">
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="搜索导航..."
+                className="w-full h-10 pl-10 pr-4 rounded-lg
+                         bg-gray-50 dark:bg-gray-700/50
+                         border border-gray-200 dark:border-gray-600
+                         focus:ring-2 focus:ring-blue-500
+                         text-gray-900 dark:text-white
+                         placeholder-gray-400 dark:placeholder-gray-500
+                         text-sm"
+              />
+              <svg
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </div>
+          </div>
+
           {/* 分类导航 */}
-          <nav className="flex-1 overflow-y-auto py-4">
+          <nav className="flex-1 overflow-y-auto">
             <ul className="space-y-0.5">
               {categories.map(category => (
                 <li key={category}>
@@ -420,7 +468,7 @@ export default function Navigation({ links, icon, cover, title }: NavigationProp
             </ul>
           </nav>
 
-          {/* 修改网络模式切换按钮，简化为只有图标 */}
+          {/* 底部按钮 */}
           {isClient && (
             <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-center gap-4">
               {/* 内外网切换按钮 */}
@@ -460,24 +508,17 @@ export default function Navigation({ links, icon, cover, title }: NavigationProp
 
       {/* 主内容区 */}
       <main className="flex-1 min-w-0">
-        {/* 搜索栏 */}
-        <div className="sticky top-0 z-10 bg-gray-100/80 dark:bg-gray-900/80 backdrop-blur-md py-4">
-          <div className="max-w-5xl mx-auto px-4">
-            <div className="relative">
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="搜索导航..."
-                className="w-full h-12 pl-12 pr-4 rounded-lg
-                         bg-white dark:bg-gray-800
-                         border border-gray-200 dark:border-gray-700
-                         focus:ring-2 focus:ring-blue-500
-                         text-gray-900 dark:text-white
-                         placeholder-gray-400 dark:placeholder-gray-500"
-              />
+        {/* 移动端分类切换按钮 */}
+        <div className="lg:hidden sticky top-0 z-10 bg-gray-100/80 dark:bg-gray-900/80 backdrop-blur-md">
+          <div className="flex items-center justify-between px-4 py-2">
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="flex items-center gap-2 text-sm font-medium
+                       text-gray-600 dark:text-gray-300
+                       hover:text-blue-500 dark:hover:text-blue-400"
+            >
               <svg
-                className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
+                className="w-5 h-5"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -486,10 +527,18 @@ export default function Navigation({ links, icon, cover, title }: NavigationProp
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  d="M4 6h16M4 12h16M4 18h16"
                 />
               </svg>
-            </div>
+              <span>分类导航</span>
+            </button>
+            
+            {/* 显示当前分类数量 */}
+            <span className="text-xs px-2 py-0.5 rounded-full 
+                          bg-gray-200 dark:bg-gray-700
+                          text-gray-600 dark:text-gray-400">
+              {categories.length} 个分类
+            </span>
           </div>
         </div>
 
