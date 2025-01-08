@@ -40,8 +40,8 @@ export async function getDatabaseInfo(): Promise<DatabaseInfo> {
 
     return {
       title,
-      icon: getIconUrl(response),
-      cover: getCoverUrl(response),
+      icon: getIconUrl(response as any),
+      cover: getCoverUrl(response as any),
     };
   } catch (error) {
     console.error('Error in getDatabaseInfo:', error);
@@ -52,29 +52,25 @@ export async function getDatabaseInfo(): Promise<DatabaseInfo> {
 }
 
 // 辅助函数：获取图标 URL
-function getIconUrl(response: GetDatabaseResponse): string | undefined {
+function getIconUrl(response: any): string | undefined {
   if (!response.icon) return undefined;
   
-  if ('type' in response.icon) {
-    if (response.icon.type === 'external') {
-      return response.icon.external.url;
-    } else if (response.icon.type === 'file') {
-      return response.icon.file.url;
-    }
+  if (response.icon.type === 'external') {
+    return response.icon.external.url;
+  } else if (response.icon.type === 'file') {
+    return response.icon.file.url;
   }
   return undefined;
 }
 
 // 辅助函数：获取封面 URL
-function getCoverUrl(response: GetDatabaseResponse): string | undefined {
+function getCoverUrl(response: any): string | undefined {
   if (!response.cover) return undefined;
   
-  if ('type' in response.cover) {
-    if (response.cover.type === 'external') {
-      return response.cover.external.url;
-    } else if (response.cover.type === 'file') {
-      return response.cover.file.url;
-    }
+  if (response.cover.type === 'external') {
+    return response.cover.external.url;
+  } else if (response.cover.type === 'file') {
+    return response.cover.file.url;
   }
   return undefined;
 }
