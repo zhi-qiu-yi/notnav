@@ -1,5 +1,5 @@
 import { Client } from '@notionhq/client';
-import { DatabaseObjectResponse } from '@notionhq/client/build/src/api-endpoints';
+import { DatabaseObjectResponse, GetDatabaseResponse } from '@notionhq/client/build/src/api-endpoints';
 
 const notion = new Client({
   auth: process.env.NOTION_TOKEN,
@@ -32,8 +32,14 @@ export async function getDatabaseInfo(): Promise<DatabaseInfo> {
       database_id: process.env.NOTION_DATABASE_ID!,
     });
 
+    // 处理标题
+    const titleProperty = Object.values(response.properties).find(
+      (prop: any) => prop.type === 'title'
+    );
+    const title = titleProperty?.name || 'Notion Nav';
+
     return {
-      title: response.title?.[0]?.plain_text || 'Notion Nav',
+      title,
       icon: getIconUrl(response),
       cover: getCoverUrl(response),
     };
@@ -49,10 +55,12 @@ export async function getDatabaseInfo(): Promise<DatabaseInfo> {
 function getIconUrl(response: DatabaseObjectResponse): string | undefined {
   if (!response.icon) return undefined;
   
-  if (response.icon.type === 'external') {
-    return response.icon.external.url;
-  } else if (response.icon.type === 'file') {
-    return response.icon.file.url;
+  if ('type' in response.icon) {
+    if (response.icon.type === 'external') {
+      return response.icon.external.url;
+    } else if (response.icon.type === 'file') {
+      return response.icon.file.url;
+    }
   }
   return undefined;
 }
@@ -61,10 +69,12 @@ function getIconUrl(response: DatabaseObjectResponse): string | undefined {
 function getCoverUrl(response: DatabaseObjectResponse): string | undefined {
   if (!response.cover) return undefined;
   
-  if (response.cover.type === 'external') {
-    return response.cover.external.url;
-  } else if (response.cover.type === 'file') {
-    return response.cover.file.url;
+  if ('type' in response.cover) {
+    if (response.cover.type === 'external') {
+      return response.cover.external.url;
+    } else if (response.cover.type === 'file') {
+      return response.cover.file.url;
+    }
   }
   return undefined;
 }
