@@ -1,5 +1,5 @@
 import { Client } from '@notionhq/client';
-import { GetDatabaseResponse } from '@notionhq/client/build/src/api-endpoints';
+import { DatabaseObjectResponse } from '@notionhq/client/build/src/api-endpoints';
 
 const notion = new Client({
   auth: process.env.NOTION_TOKEN,
@@ -104,17 +104,17 @@ export async function getDatabaseInfo(): Promise<DatabaseInfo> {
   try {
     const response = await notion.databases.retrieve({
       database_id: process.env.NOTION_DATABASE_ID!,
-    });
+    }) as DatabaseObjectResponse;
 
-    // 正确获取数据库标题
-    const title = response.title
-      .map(textItem => textItem.plain_text)
-      .join('') || 'Notion Nav';
+    // 获取数据库标题
+    const dbTitle = response.properties?.Name?.title?.[0]?.plain_text 
+      || response.properties?.title?.title?.[0]?.plain_text
+      || 'Notion Nav';
 
     return {
-      title,
-      icon: getIconUrl(response as any),
-      cover: getCoverUrl(response as any),
+      title: dbTitle,
+      icon: getIconUrl(response),
+      cover: getCoverUrl(response),
     };
   } catch (error) {
     console.error('Error in getDatabaseInfo:', error);

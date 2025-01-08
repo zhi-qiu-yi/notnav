@@ -12,10 +12,11 @@ services:
     image: notion-nav:latest
     container_name: notion-nav
     restart: always
-    env_file:
-      - .env.local
     environment:
       - NODE_ENV=production
+      - NOTION_TOKEN=${NOTION_TOKEN}
+      - NOTION_DATABASE_ID=${NOTION_DATABASE_ID}
+      - NOTION_CONFIG_DATABASE_ID=${NOTION_CONFIG_DATABASE_ID}
     ports:
       - "3000:3000"
     healthcheck:

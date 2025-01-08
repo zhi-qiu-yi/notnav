@@ -26,6 +26,10 @@ const nextConfig = {
     }
     return config;
   },
+  env: {
+    NOTION_DATABASE_ID: process.env.NOTION_DATABASE_ID,
+    NOTION_CONFIG_DATABASE_ID: process.env.NOTION_CONFIG_DATABASE_ID,
+  }
 }
 
 module.exports = nextConfig 
