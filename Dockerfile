@@ -20,6 +20,7 @@ COPY . .
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NEXT_SHARP_PATH=/app/node_modules/sharp
+ENV NODE_NO_WARNINGS=1
 
 RUN npm run build
 
@@ -30,6 +31,7 @@ WORKDIR /app
 # 设置环境变量
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_NO_WARNINGS=1
 
 # 创建非 root 用户
 RUN addgroup --system --gid 1001 nodejs && \
