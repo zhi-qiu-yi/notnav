@@ -1,8 +1,8 @@
 import { Client } from '@notionhq/client';
-import { unstable_cache } from 'next/cache';
+import { DatabaseObjectResponse } from '@notionhq/client/build/src/api-endpoints';
 
 const notion = new Client({
-  auth: process.env.NOTION_API_KEY,
+  auth: process.env.NOTION_TOKEN,
   timeoutMs: 30000,
 });
 
@@ -18,50 +18,65 @@ export interface Link {
   createdTime: string;
 }
 
-// 配置类型
-interface SortConfig {
-  type: 'order';
-  value: number;
+// 数据库信息接口
+interface DatabaseInfo {
+  icon?: string;
+  cover?: string;
+  title: string;
 }
 
-// 获取配置
-async function getConfig(): Promise<Record<string, number>> {
+// 获取数据库信息
+export async function getDatabaseInfo(): Promise<DatabaseInfo> {
   try {
-    const response = await notion.databases.query({
-      database_id: process.env.NOTION_CONFIG_DATABASE_ID!,
-      filter: {
-        property: 'type',
-        select: {
-          equals: 'order'
-        }
-      }
+    const response = await notion.databases.retrieve({
+      database_id: process.env.NOTION_DATABASE_ID!,
     });
 
-    return response.results.reduce((acc: Record<string, number>, item: any) => {
-      const title = item.properties.title?.title[0]?.plain_text;
-      const value = item.properties.value?.number;
-      if (title && typeof value === 'number') {
-        acc[title] = value;
-      }
-      return acc;
-    }, {});
+    return {
+      title: response.title?.[0]?.plain_text || 'Notion Nav',
+      icon: getIconUrl(response),
+      cover: getCoverUrl(response),
+    };
   } catch (error) {
-    console.error('Error in getConfig:', error);
-    return {};
+    console.error('Error in getDatabaseInfo:', error);
+    return {
+      title: 'Notion Nav',
+    };
   }
+}
+
+// 辅助函数：获取图标 URL
+function getIconUrl(response: DatabaseObjectResponse): string | undefined {
+  if (!response.icon) return undefined;
+  
+  if (response.icon.type === 'external') {
+    return response.icon.external.url;
+  } else if (response.icon.type === 'file') {
+    return response.icon.file.url;
+  }
+  return undefined;
+}
+
+// 辅助函数：获取封面 URL
+function getCoverUrl(response: DatabaseObjectResponse): string | undefined {
+  if (!response.cover) return undefined;
+  
+  if (response.cover.type === 'external') {
+    return response.cover.external.url;
+  } else if (response.cover.type === 'file') {
+    return response.cover.file.url;
+  }
+  return undefined;
 }
 
 // 获取链接
 export async function getLinks(): Promise<Link[]> {
   try {
-    const [response, configs] = await Promise.all([
-      notion.databases.query({
-        database_id: process.env.NOTION_DATABASE_ID!,
-      }),
-      getConfig()
-    ]);
+    const response = await notion.databases.query({
+      database_id: process.env.NOTION_DATABASE_ID!,
+    });
 
-    const links = response.results.map((item: any) => ({
+    return response.results.map((item: any) => ({
       id: item.id,
       title: item.properties.title?.title[0]?.plain_text || '',
       description: item.properties.desp?.rich_text[0]?.plain_text || '',
@@ -72,57 +87,8 @@ export async function getLinks(): Promise<Link[]> {
       createdTime: item.created_time
     }));
 
-    // 按配置排序
-    return links.sort((a, b) => {
-      // 首先按分类排序（使用配置的顺序）
-      const orderA = configs[a.category] ?? 999;
-      const orderB = configs[b.category] ?? 999;
-      
-      if (orderA !== orderB) {
-        return orderA - orderB;
-      }
-      
-      // 同一分类内按标题排序
-      return a.title.localeCompare(b.title);
-    });
-
   } catch (error) {
     console.error('Error in getLinks:', error);
     throw error;
   }
-}
-
-// 数据库信息接口
-interface DatabaseInfo {
-  icon: string | undefined;
-  cover: string | undefined;
-  title: string;
-}
-
-// 获取数据库信息
-export const getDatabaseInfo = unstable_cache(
-  async (): Promise<DatabaseInfo> => {
-    try {
-      const response = await notion.databases.retrieve({
-        database_id: process.env.NOTION_DATABASE_ID!,
-      });
-
-      return {
-        icon: response.icon?.type === 'external' ? response.icon.external.url : 
-              response.icon?.type === 'file' ? response.icon.file.url : undefined,
-        cover: response.cover?.type === 'external' ? response.cover.external.url :
-               response.cover?.type === 'file' ? response.cover.file.url : undefined,
-        title: response.title.map(item => item.plain_text).join(' ').trim() || 'Notion 导航站',
-      };
-    } catch (error) {
-      console.error('Error fetching database info:', error);
-      return {
-        icon: undefined,
-        cover: undefined,
-        title: 'Notion 导航站',
-      };
-    }
-  },
-  ['database-info'],
-  { revalidate: parseInt(process.env.REVALIDATE_INTERVAL || '3600', 10) }
-); 
+} 
