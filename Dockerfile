@@ -13,15 +13,10 @@ RUN npm ci
 # 复制源代码
 COPY . .
 
-# 设置构建时环境变量
-ARG NOTION_TOKEN
-ARG NOTION_DATABASE_ID
-ARG NOTION_CONFIG_DATABASE_ID
-
 # 构建应用
-RUN --mount=type=secret,id=notion_token \
-    --mount=type=secret,id=notion_database_id \
-    --mount=type=secret,id=notion_config_database_id \
+RUN --mount=type=secret,id=notion_token,required=true \
+    --mount=type=secret,id=notion_database_id,required=true \
+    --mount=type=secret,id=notion_config_database_id,required=true \
     NOTION_TOKEN=$(cat /run/secrets/notion_token) \
     NOTION_DATABASE_ID=$(cat /run/secrets/notion_database_id) \
     NOTION_CONFIG_DATABASE_ID=$(cat /run/secrets/notion_config_database_id) \
