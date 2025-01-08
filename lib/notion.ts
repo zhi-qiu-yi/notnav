@@ -1,5 +1,5 @@
 import { Client } from '@notionhq/client';
-import { DatabaseObjectResponse, GetDatabaseResponse } from '@notionhq/client/build/src/api-endpoints';
+import { GetDatabaseResponse } from '@notionhq/client/build/src/api-endpoints';
 
 const notion = new Client({
   auth: process.env.NOTION_TOKEN,
@@ -52,7 +52,7 @@ export async function getDatabaseInfo(): Promise<DatabaseInfo> {
 }
 
 // 辅助函数：获取图标 URL
-function getIconUrl(response: DatabaseObjectResponse): string | undefined {
+function getIconUrl(response: GetDatabaseResponse): string | undefined {
   if (!response.icon) return undefined;
   
   if ('type' in response.icon) {
@@ -66,7 +66,7 @@ function getIconUrl(response: DatabaseObjectResponse): string | undefined {
 }
 
 // 辅助函数：获取封面 URL
-function getCoverUrl(response: DatabaseObjectResponse): string | undefined {
+function getCoverUrl(response: GetDatabaseResponse): string | undefined {
   if (!response.cover) return undefined;
   
   if ('type' in response.cover) {
