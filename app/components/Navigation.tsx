@@ -20,6 +20,13 @@ interface DragItem {
   index: number;
 }
 
+interface MemoizedLinkProps {
+  link: Link;
+  viewMode: ViewMode;
+  getActualLink: (link: Link) => string;
+  index?: number;
+}
+
 export default function Navigation({ links, icon, cover, title }: NavigationProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -225,15 +232,11 @@ export default function Navigation({ links, icon, cover, title }: NavigationProp
   };
 
   // 只保留一个 MemoizedLink 组件定义
-  const MemoizedLink = React.memo(({ link, ...props }: {
-    link: Link;
-    viewMode: ViewMode;
-    getActualLink: (link: Link) => string;
-  }) => {
+  const MemoizedLink = React.memo(({ link, viewMode, getActualLink, index }: MemoizedLinkProps) => {
     return (
       <div className={getLinkClasses()}>
         <a
-          href={props.getActualLink(link)}
+          href={getActualLink(link)}
           target="_blank"
           rel="noopener noreferrer"
           className="block w-full h-full"
