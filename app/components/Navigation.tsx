@@ -7,9 +7,10 @@ interface NavigationProps {
   links: Link[];
   icon?: string;
   cover?: string;
+  title: string;
 }
 
-export default function Navigation({ links, icon, cover }: NavigationProps) {
+export default function Navigation({ links, icon, cover, title }: NavigationProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -141,7 +142,7 @@ export default function Navigation({ links, icon, cover }: NavigationProps) {
                 </svg>
               )}
               <h1 className="text-lg font-bold text-gray-800 dark:text-white group-hover:text-blue-500">
-                导航站
+                {title}
               </h1>
             </button>
           </div>

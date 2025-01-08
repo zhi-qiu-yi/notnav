@@ -50,6 +50,7 @@ export default async function Home() {
         links={sortedLinks} 
         icon={dbInfo.icon} 
         cover={dbInfo.cover}
+        title={dbInfo.title}
       />
     );
   } catch (error) {

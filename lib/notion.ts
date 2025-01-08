@@ -14,6 +14,7 @@ import { unstable_cache } from 'next/cache';
 
 const notion = new Client({
   auth: process.env.NOTION_API_KEY,
+  timeoutMs: 30000,
 });
 
 export interface Link {
@@ -79,12 +80,14 @@ export const getLinks = unstable_cache(
     }
 
     try {
-      const response = await retryOperation(() => 
-        notion.databases.query({
+      const response = await retryOperation(
+        () => notion.databases.query({
           database_id: process.env.NOTION_DATABASE_ID!,
           sorts: [{ timestamp: "created_time", direction: "ascending" }],
-          page_size: 100 // 限制返回数量
-        })
+          page_size: 100
+        }),
+        5,
+        2000
       ) as QueryDatabaseResponse;
 
       return response.results
@@ -123,13 +126,20 @@ export const getLinks = unstable_cache(
           }
         })
         .filter((link): link is Link => link !== null);
-    } catch (error) {
-      console.error('Error fetching links:', error);
+    } catch (error: any) {
+      console.error('Error fetching links:', {
+        message: error.message,
+        code: error.code,
+        stack: error.stack
+      });
       return [];
     }
   },
   ['links'],
-  { revalidate: REVALIDATE_INTERVAL }
+  { 
+    revalidate: REVALIDATE_INTERVAL,
+    tags: ['links']
+  }
 );
 
 // 缓存 getConfig 函数
@@ -187,22 +197,33 @@ export const getConfig = unstable_cache(
 async function retryOperation<T>(
   operation: () => Promise<T>,
   retries = 3,
-  delay = 1000
+  initialDelay = 2000,
+  maxDelay = 10000
 ): Promise<T> {
-  try {
-    return await operation();
-  } catch (error) {
-    if (retries > 0) {
-      await new Promise(resolve => setTimeout(resolve, delay));
-      return retryOperation(operation, retries - 1, delay * 2);
+  let lastError: any;
+  let delay = initialDelay;
+
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await operation();
+    } catch (error: any) {
+      lastError = error;
+      console.warn(`Attempt ${i + 1} failed:`, error.message);
+      
+      if (i < retries - 1) {
+        delay = Math.min(delay * 2, maxDelay);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
     }
-    throw error;
   }
+
+  throw lastError;
 }
 
 interface DatabaseInfo {
   icon: string | undefined;
   cover: string | undefined;
+  title: string;
 }
 
 // 缓存 getDatabaseInfo 函数
@@ -215,17 +236,24 @@ export const getDatabaseInfo = unstable_cache(
       
       const database = response as DatabaseObjectResponse;
       
+      const title = database.title
+        .map(item => item.plain_text)
+        .join(' ')
+        .trim() || 'Notion 导航站';
+      
       return {
         icon: database.icon?.type === 'external' ? database.icon.external.url : 
               database.icon?.type === 'file' ? database.icon.file.url : undefined,
         cover: database.cover?.type === 'external' ? database.cover.external.url :
-               database.cover?.type === 'file' ? database.cover.file.url : undefined
+               database.cover?.type === 'file' ? database.cover.file.url : undefined,
+        title: title,
       };
     } catch (error) {
       console.error('Error fetching database info:', error);
       return {
         icon: undefined,
-        cover: undefined
+        cover: undefined,
+        title: 'Notion 导航站',
       };
     }
   },

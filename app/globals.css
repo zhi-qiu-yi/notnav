@@ -4,17 +4,22 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-y: scroll;
 }
 
-/* 隐藏滚动条但保持可滚动 - Webkit浏览器 */
-.hide-scrollbar::-webkit-scrollbar {
+/* 隐藏滚动条 - Webkit 浏览器 */
+::-webkit-scrollbar {
   display: none;
 }
 
-/* 隐藏滚动条但保持可滚动 - Firefox */
-.hide-scrollbar {
+/* 隐藏滚动条 - Firefox */
+* {
   scrollbar-width: none;
-  -ms-overflow-style: none;  /* IE and Edge */
+}
+
+/* 隐藏滚动条 - IE/Edge */
+* {
+  -ms-overflow-style: none;
 }
 
 /* 添加自定义工具类 */

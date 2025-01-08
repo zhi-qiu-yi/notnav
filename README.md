@@ -112,3 +112,22 @@ MIT License © 2024
 ---
 
 如果这个项目对你有帮助，欢迎 Star ⭐️
+
+## 环境变量配置
+
+### 必需配置
+- `NOTION_API_KEY`: Notion API 密钥
+- `NOTION_DATABASE_ID`: 导航数据库 ID
+- `NOTION_CONFIG_DATABASE_ID`: 配置数据库 ID
+
+### 可选配置
+- `REVALIDATE_INTERVAL`: 缓存刷新间隔（秒），默认 3600
+
+## 常见问题
+
+### API 请求超时
+如果遇到 Notion API 请求超时问题：
+1. 确保网络连接稳定
+2. 检查 Notion API 服务状态
+3. 适当增加 `REVALIDATE_INTERVAL` 值减少请求频率
+4. 应用会自动重试失败的请求
