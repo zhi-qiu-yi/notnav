@@ -31,4 +31,28 @@ html {
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+}
+
+/* 优化动画性能 */
+* {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+
+/* 添加平滑过渡 */
+.grid {
+  transition: grid-template-columns 300ms ease-in-out,
+              gap 300ms ease-in-out;
+  will-change: grid-template-columns, gap;
+}
+
+/* 优化动画性能 */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 } 

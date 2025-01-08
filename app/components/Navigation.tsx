@@ -10,12 +10,21 @@ interface NavigationProps {
   title: string;
 }
 
+// 添加视图类型
+type ViewMode = 'grid' | 'compact' | 'list';
+
 export default function Navigation({ links, icon, cover, title }: NavigationProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLanMode, setIsLanMode] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('viewMode') as ViewMode) || 'grid';
+    }
+    return 'grid';
+  });
 
   useEffect(() => {
     setIsClient(true);
@@ -93,6 +102,245 @@ export default function Navigation({ links, icon, cover, title }: NavigationProp
       setIsRefreshing(false);
     }
   };
+
+  // 保存视图模式
+  useEffect(() => {
+    if (isClient) {
+      localStorage.setItem('viewMode', viewMode);
+    }
+  }, [viewMode, isClient]);
+
+  // 视图切换按钮
+  const ViewModeButton = () => (
+    <button
+      onClick={() => {
+        setViewMode(current => {
+          switch (current) {
+            case 'grid': return 'compact';
+            case 'compact': return 'list';
+            default: return 'grid';
+          }
+        });
+      }}
+      title={`切换到${viewMode === 'grid' ? '紧凑' : viewMode === 'compact' ? '列表' : '网格'}视图`}
+      className="flex items-center justify-center w-8 h-8
+               rounded-lg
+               bg-gray-100 dark:bg-gray-700
+               text-gray-600 dark:text-gray-300
+               hover:bg-gray-200 dark:hover:bg-gray-600
+               transition-colors"
+    >
+      <svg
+        className={`w-4 h-4 ${
+          viewMode === 'grid' 
+            ? 'text-blue-500' 
+            : viewMode === 'compact'
+              ? 'text-green-500'
+              : 'text-gray-400'
+        }`}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        {viewMode === 'grid' ? (
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+          />
+        ) : viewMode === 'compact' ? (
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M4 5h16M4 8h16M4 11h16M4 14h16M4 17h16M4 20h16"
+          />
+        ) : (
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M4 6h16M4 10h16M4 14h16M4 18h16"
+          />
+        )}
+      </svg>
+    </button>
+  );
+
+  // 链接卡片区域的布局
+  const getLayoutClasses = () => {
+    const baseClasses = 'transition-[grid-template-columns,gap] duration-300 ease-in-out';
+    switch (viewMode) {
+      case 'grid':
+        return `${baseClasses} grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4`;
+      case 'compact':
+        return `${baseClasses} grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2`;
+      case 'list':
+        return `${baseClasses} grid grid-cols-2 gap-1`;
+    }
+  };
+
+  // 链接项的样式
+  const getLinkClasses = () => {
+    const baseClasses = `
+      group transition-all duration-300 ease-in-out
+      transform motion-reduce:transition-none
+    `;
+    switch (viewMode) {
+      case 'grid':
+        return `${baseClasses} bg-white dark:bg-gray-800 rounded-lg p-3
+                border border-gray-200 dark:border-gray-700
+                hover:border-blue-500/50 dark:hover:border-blue-500/50
+                hover:shadow-lg hover:shadow-blue-500/10
+                hover:-translate-y-0.5
+                flex flex-col items-center
+                scale-100 opacity-100`;
+      case 'compact':
+        return `${baseClasses} bg-white dark:bg-gray-800 rounded-lg p-3
+                border border-gray-200 dark:border-gray-700
+                hover:border-blue-500/50 dark:hover:border-blue-500/50
+                hover:shadow-md
+                flex items-center
+                scale-100 opacity-100`;
+      case 'list':
+        return `${baseClasses} py-2.5 px-2.5 flex items-center rounded-md
+                hover:bg-gray-50 dark:hover:bg-gray-800/50
+                scale-100 opacity-100`;
+    }
+  };
+
+  // 添加性能优化
+  const MemoizedLink = React.memo(({ link, viewMode, getActualLink }: {
+    link: Link;
+    viewMode: ViewMode;
+    getActualLink: (link: Link) => string;
+  }) => {
+    return (
+      <a
+        key={link.id}
+        href={getActualLink(link)}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={getLinkClasses()}
+      >
+        {viewMode === 'grid' ? (
+          <>
+            {/* 网格视图的图标 */}
+            {link.icon ? (
+              <img 
+                src={link.icon} 
+                alt=""
+                className="w-12 h-12 rounded-lg shadow-sm
+                         group-hover:shadow group-hover:scale-105
+                         transition-all duration-300"
+              />
+            ) : (
+              <div className="w-12 h-12 rounded-lg
+                           bg-gradient-to-br from-gray-100 to-gray-50
+                           dark:from-gray-700 dark:to-gray-600
+                           group-hover:from-blue-50 group-hover:to-blue-100
+                           dark:group-hover:from-blue-900/50 dark:group-hover:to-blue-800/50
+                           flex items-center justify-center
+                           shadow-sm group-hover:shadow group-hover:scale-105
+                           transition-all duration-300">
+                <span className="text-xl font-bold 
+                              text-gray-400 dark:text-gray-500
+                              group-hover:text-blue-500 dark:group-hover:text-blue-400">
+                  {link.title[0]}
+                </span>
+              </div>
+            )}
+            {/* 网格视图的文字 */}
+            <div className="mt-3 text-center w-full">
+              <h3 className="font-medium text-gray-900 dark:text-white
+                           group-hover:text-blue-500 dark:group-hover:text-blue-400
+                           text-sm truncate">
+                {link.title}
+              </h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate
+                         group-hover:text-blue-500/70 dark:group-hover:text-blue-400/70">
+                {link.description}
+              </p>
+            </div>
+          </>
+        ) : viewMode === 'compact' ? (
+          <div className="flex items-center w-full">
+            {link.icon ? (
+              <img 
+                src={link.icon} 
+                alt=""
+                className="w-10 h-10 rounded-lg shrink-0
+                         shadow-sm group-hover:shadow group-hover:scale-105
+                         transition-all duration-300"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-lg shrink-0
+                           bg-gradient-to-br from-gray-100 to-gray-50
+                           dark:from-gray-700 dark:to-gray-600
+                           group-hover:from-blue-50 group-hover:to-blue-100
+                           dark:group-hover:from-blue-900/50 dark:group-hover:to-blue-800/50
+                           flex items-center justify-center
+                           shadow-sm group-hover:shadow group-hover:scale-105
+                           transition-all duration-300">
+                <span className="text-lg font-bold 
+                              text-gray-400 dark:text-gray-500
+                              group-hover:text-blue-500 dark:group-hover:text-blue-400">
+                  {link.title[0]}
+                </span>
+              </div>
+            )}
+            <div className="ml-4 min-w-0 flex-1">
+              <h3 className="font-medium text-gray-900 dark:text-white truncate
+                           group-hover:text-blue-500 dark:group-hover:text-blue-400">
+                {link.title}
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 truncate
+                         group-hover:text-blue-500/70 dark:group-hover:text-blue-400/70">
+                {link.description}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center w-full">
+            <div className="flex items-center">
+              {/* 图标部分 */}
+              {link.icon ? (
+                <img 
+                  src={link.icon} 
+                  alt=""
+                  className="w-6 h-6 rounded shrink-0"
+                />
+              ) : (
+                <div className="w-6 h-6 rounded bg-gray-100 dark:bg-gray-700
+                             flex items-center justify-center shrink-0">
+                  <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                    {link.title[0]}
+                  </span>
+                </div>
+              )}
+
+              {/* 文字部分 */}
+              <div className={`
+                min-w-0 ml-3 flex-1
+              `}>
+                <h3 className={`
+                  font-medium text-gray-900 dark:text-white
+                  group-hover:text-blue-500 dark:group-hover:text-blue-400
+                  text-sm truncate`
+                }>
+                  {link.title}
+                </h3>
+                <span className="text-sm text-gray-500 dark:text-gray-400 shrink-0">
+                  {link.description}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+      </a>
+    );
+  });
 
   return (
     <div className="flex bg-[#f7f7f7] dark:bg-gray-900 min-h-screen">
@@ -174,11 +422,12 @@ export default function Navigation({ links, icon, cover, title }: NavigationProp
 
           {/* 修改网络模式切换按钮，简化为只有图标 */}
           {isClient && (
-            <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-center gap-4">
+              {/* 内外网切换按钮 */}
               <button
                 onClick={() => setIsLanMode(!isLanMode)}
-                title={isLanMode ? '内网模式' : '外网模式'}  // 添加悬停提示
-                className="flex items-center justify-center w-8 h-8 mx-auto
+                title={isLanMode ? '内网模式' : '外网模式'}
+                className="flex items-center justify-center w-8 h-8
                          rounded-lg
                          bg-gray-100 dark:bg-gray-700
                          text-gray-600 dark:text-gray-300
@@ -201,6 +450,9 @@ export default function Navigation({ links, icon, cover, title }: NavigationProp
                   />
                 </svg>
               </button>
+
+              {/* 视图切换按钮 */}
+              <ViewModeButton />
             </div>
           )}
         </div>
@@ -253,59 +505,14 @@ export default function Navigation({ links, icon, cover, title }: NavigationProp
                 <span className="w-1 h-6 bg-blue-500 rounded-full mr-3"></span>
                 {category}
               </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className={getLayoutClasses()}>
                 {links.map(link => (
-                  <a
+                  <MemoizedLink
                     key={link.id}
-                    href={getActualLink(link)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group bg-white dark:bg-gray-800 rounded-lg p-4
-                             border border-gray-200 dark:border-gray-700
-                             hover:border-blue-500/50 dark:hover:border-blue-500/50
-                             hover:shadow-lg hover:shadow-blue-500/10
-                             hover:-translate-y-0.5
-                             transition-all duration-300"
-                  >
-                    <div className="flex items-center">
-                      {link.icon ? (
-                        <img 
-                          src={link.icon} 
-                          alt=""
-                          className="w-10 h-10 rounded-lg 
-                                   shadow-sm group-hover:shadow
-                                   group-hover:scale-105
-                                   transition-all duration-300" 
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-lg 
-                                      bg-gradient-to-br from-gray-100 to-gray-50
-                                      dark:from-gray-700 dark:to-gray-600
-                                      group-hover:from-blue-50 group-hover:to-blue-100
-                                      dark:group-hover:from-blue-900/50 dark:group-hover:to-blue-800/50
-                                      flex items-center justify-center
-                                      shadow-sm group-hover:shadow
-                                      group-hover:scale-105
-                                      transition-all duration-300">
-                          <span className="text-xl font-bold 
-                                        text-gray-400 dark:text-gray-500
-                                        group-hover:text-blue-500 dark:group-hover:text-blue-400">
-                            {link.title[0]}
-                          </span>
-                        </div>
-                      )}
-                      <div className="ml-3 min-w-0">
-                        <h3 className="font-medium text-gray-900 dark:text-white truncate
-                                     group-hover:text-blue-500 dark:group-hover:text-blue-400">
-                          {link.title}
-                        </h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 truncate
-                                    group-hover:text-blue-500/70 dark:group-hover:text-blue-400/70">
-                          {link.description}
-                        </p>
-                      </div>
-                    </div>
-                  </a>
+                    link={link}
+                    viewMode={viewMode}
+                    getActualLink={getActualLink}
+                  />
                 ))}
               </div>
             </section>
