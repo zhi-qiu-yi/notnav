@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // 输出独立应用
+  output: 'standalone',
+  
   // 图片优化
   images: {
     domains: [

@@ -1,26 +1,32 @@
-# 开发环境文件
-node_modules
-.next
+# 源代码控制
 .git
 .gitignore
+.github
+
+# 环境文件
 .env*
 !.env.production
-secrets/
-*.key
-*.pem
 
-# 日志文件
-*.log
-
-# 系统文件
-.DS_Store
-Thumbs.db
-
-# IDE 配置文件
-.idea
+# 开发文件
+node_modules
+.next
+.cache
+.npm
 .vscode
+.idea
+*.log
+*.md
+*.test.*
+__tests__
+coverage
 
-# Docker 相关文件
+# Docker 相关
 Dockerfile
 .dockerignore
-README.md 
+docker-compose*
+
+# 其他
+.DS_Store
+*.pem
+*.key
+tmp 
