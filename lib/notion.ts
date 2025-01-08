@@ -25,6 +25,80 @@ interface DatabaseInfo {
   title: string;
 }
 
+// 配置类型
+interface CategoryOrder {
+  [key: string]: number;
+}
+
+// 获取分类排序配置
+async function getCategoryOrder(): Promise<CategoryOrder> {
+  try {
+    const response = await notion.databases.query({
+      database_id: process.env.NOTION_CONFIG_DATABASE_ID!,
+      filter: {
+        property: 'type',
+        select: {
+          equals: 'order'
+        }
+      }
+    });
+
+    return response.results.reduce((acc: CategoryOrder, item: any) => {
+      const title = item.properties.title?.title[0]?.plain_text;
+      const value = item.properties.value?.number;
+      if (title && typeof value === 'number') {
+        acc[title] = value;
+      }
+      return acc;
+    }, {});
+  } catch (error) {
+    console.error('Error fetching category order:', error);
+    return {};
+  }
+}
+
+// 获取链接
+export async function getLinks(): Promise<Link[]> {
+  try {
+    // 同时获取链接和排序配置
+    const [response, categoryOrder] = await Promise.all([
+      notion.databases.query({
+        database_id: process.env.NOTION_DATABASE_ID!,
+      }),
+      getCategoryOrder()
+    ]);
+
+    const links = response.results.map((item: any) => ({
+      id: item.id,
+      title: item.properties.title?.title[0]?.plain_text || '',
+      description: item.properties.desp?.rich_text[0]?.plain_text || '',
+      category: item.properties.cat?.select?.name || '未分类',
+      icon: item.properties.icon?.files[0]?.file?.url || item.properties.icon?.files[0]?.external?.url || '',
+      link: item.properties.link?.url || '',
+      lanlink: item.properties.lanlink?.url || '',
+      createdTime: item.created_time
+    }));
+
+    // 根据配置排序
+    return links.sort((a, b) => {
+      // 首先按分类排序
+      const orderA = categoryOrder[a.category] ?? 999;
+      const orderB = categoryOrder[b.category] ?? 999;
+      
+      if (orderA !== orderB) {
+        return orderA - orderB;
+      }
+      
+      // 同一分类内按标题排序
+      return a.title.localeCompare(b.title, 'zh-CN');
+    });
+
+  } catch (error) {
+    console.error('Error in getLinks:', error);
+    throw error;
+  }
+}
+
 // 获取数据库信息
 export async function getDatabaseInfo(): Promise<DatabaseInfo> {
   try {
@@ -32,11 +106,10 @@ export async function getDatabaseInfo(): Promise<DatabaseInfo> {
       database_id: process.env.NOTION_DATABASE_ID!,
     });
 
-    // 处理标题
-    const titleProperty = Object.values(response.properties).find(
-      (prop: any) => prop.type === 'title'
-    );
-    const title = titleProperty?.name || 'Notion Nav';
+    // 正确获取数据库标题
+    const title = response.title
+      .map(textItem => textItem.plain_text)
+      .join('') || 'Notion Nav';
 
     return {
       title,
@@ -73,28 +146,4 @@ function getCoverUrl(response: any): string | undefined {
     return response.cover.file.url;
   }
   return undefined;
-}
-
-// 获取链接
-export async function getLinks(): Promise<Link[]> {
-  try {
-    const response = await notion.databases.query({
-      database_id: process.env.NOTION_DATABASE_ID!,
-    });
-
-    return response.results.map((item: any) => ({
-      id: item.id,
-      title: item.properties.title?.title[0]?.plain_text || '',
-      description: item.properties.desp?.rich_text[0]?.plain_text || '',
-      category: item.properties.cat?.select?.name || '未分类',
-      icon: item.properties.icon?.files[0]?.file?.url || item.properties.icon?.files[0]?.external?.url || '',
-      link: item.properties.link?.url || '',
-      lanlink: item.properties.lanlink?.url || '',
-      createdTime: item.created_time
-    }));
-
-  } catch (error) {
-    console.error('Error in getLinks:', error);
-    throw error;
-  }
 } 

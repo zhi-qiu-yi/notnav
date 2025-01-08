@@ -5,11 +5,15 @@ services:
     build: 
       context: .
       dockerfile: Dockerfile
-    image: twoice/notion-nav:latest
+      args:
+        NOTION_TOKEN: ${NOTION_TOKEN}
+        NOTION_DATABASE_ID: ${NOTION_DATABASE_ID}
+        NOTION_CONFIG_DATABASE_ID: ${NOTION_CONFIG_DATABASE_ID}
+    image: notion-nav:latest
     container_name: notion-nav
     restart: always
     env_file:
-      - .env
+      - .env.local
     environment:
       - NODE_ENV=production
     ports:
