@@ -1,7 +1,7 @@
 import './globals.css'
 import { Metadata } from 'next'
 import React from 'react'
-import { getDatabaseInfo } from '@/lib/notion'
+import { getDatabaseInfo } from '../lib/notion'
 
 // 生成动态元数据
 export async function generateMetadata(): Promise<Metadata> {
