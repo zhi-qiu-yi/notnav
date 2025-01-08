@@ -17,13 +17,14 @@ COPY . .
 ARG NOTION_TOKEN
 ARG NOTION_DATABASE_ID
 ARG NOTION_CONFIG_DATABASE_ID
-ENV NEXT_PUBLIC_NOTION_DATABASE_ID=${NOTION_DATABASE_ID}
-ENV NODE_NO_WARNINGS=1
 
 # 构建应用
-RUN NOTION_TOKEN=${NOTION_TOKEN} \
-    NOTION_DATABASE_ID=${NOTION_DATABASE_ID} \
-    NOTION_CONFIG_DATABASE_ID=${NOTION_CONFIG_DATABASE_ID} \
+RUN --mount=type=secret,id=notion_token \
+    --mount=type=secret,id=notion_database_id \
+    --mount=type=secret,id=notion_config_database_id \
+    NOTION_TOKEN=$(cat /run/secrets/notion_token) \
+    NOTION_DATABASE_ID=$(cat /run/secrets/notion_database_id) \
+    NOTION_CONFIG_DATABASE_ID=$(cat /run/secrets/notion_config_database_id) \
     npm run build
 
 # 生产阶段

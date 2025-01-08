@@ -1,5 +1,5 @@
 import { Client } from '@notionhq/client';
-import { DatabaseObjectResponse } from '@notionhq/client/build/src/api-endpoints';
+import { DatabaseObjectResponse, GetDatabaseResponse } from '@notionhq/client/build/src/api-endpoints';
 
 const notion = new Client({
   auth: process.env.NOTION_TOKEN,
@@ -107,9 +107,15 @@ export async function getDatabaseInfo(): Promise<DatabaseInfo> {
     }) as DatabaseObjectResponse;
 
     // 获取数据库标题
-    const dbTitle = response.properties?.Name?.title?.[0]?.plain_text 
-      || response.properties?.title?.title?.[0]?.plain_text
-      || 'Notion Nav';
+    let dbTitle = 'Notion Nav';
+    
+    // 尝试从 response.title 获取标题
+    if ('title' in response) {
+      const titleArray = (response as any).title;
+      if (Array.isArray(titleArray) && titleArray.length > 0) {
+        dbTitle = titleArray.map(t => t.plain_text).join('');
+      }
+    }
 
     return {
       title: dbTitle,
@@ -125,25 +131,27 @@ export async function getDatabaseInfo(): Promise<DatabaseInfo> {
 }
 
 // 辅助函数：获取图标 URL
-function getIconUrl(response: any): string | undefined {
+function getIconUrl(response: DatabaseObjectResponse): string | undefined {
   if (!response.icon) return undefined;
   
-  if (response.icon.type === 'external') {
-    return response.icon.external.url;
-  } else if (response.icon.type === 'file') {
-    return response.icon.file.url;
+  const icon = response.icon as any;
+  if (icon.type === 'external') {
+    return icon.external.url;
+  } else if (icon.type === 'file') {
+    return icon.file.url;
   }
   return undefined;
 }
 
 // 辅助函数：获取封面 URL
-function getCoverUrl(response: any): string | undefined {
+function getCoverUrl(response: DatabaseObjectResponse): string | undefined {
   if (!response.cover) return undefined;
   
-  if (response.cover.type === 'external') {
-    return response.cover.external.url;
-  } else if (response.cover.type === 'file') {
-    return response.cover.file.url;
+  const cover = response.cover as any;
+  if (cover.type === 'external') {
+    return cover.external.url;
+  } else if (cover.type === 'file') {
+    return cover.file.url;
   }
   return undefined;
 } 
