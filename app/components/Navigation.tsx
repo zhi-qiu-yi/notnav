@@ -13,6 +13,14 @@ interface NavigationProps {
 // 添加视图类型
 type ViewMode = 'grid' | 'compact' | 'list';
 
+// 添加类型定义
+interface MemoizedLinkProps {
+  link: Link;
+  viewMode: 'grid' | 'compact' | 'list';
+  getActualLink: (link: Link) => string;
+  index: number;
+}
+
 export default function Navigation({ links, icon, cover, title }: NavigationProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -216,7 +224,6 @@ export default function Navigation({ links, icon, cover, title }: NavigationProp
           </div>
         );
       } else {
-        // 无图标时显示蓝色边框和文字
         return (
           <div className={containerClass}>
             <div className="w-full h-full flex items-center justify-center border-2 rounded-lg bg-gray-50 dark:bg-gray-800" 
