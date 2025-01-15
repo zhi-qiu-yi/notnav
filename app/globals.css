@@ -132,3 +132,25 @@ html {
 .hover\:text-primary-hover:hover {
   color: var(--primary-hover);
 } 
+
+/* 添加到文件末尾 */
+.fallback-icon {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background-color: white !important;
+  color: #6B7280 !important;
+}
+
+.dark .fallback-icon {
+  background-color: #1F2937 !important;
+  color: #9CA3AF !important;
+}
+
+.fallback-icon span {
+  color: #6b7280;
+}
+
+.dark .fallback-icon span {
+  color: #9ca3af;
+} 

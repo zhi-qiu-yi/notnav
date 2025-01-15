@@ -5,12 +5,13 @@ const nextConfig = {
   
   // 图片优化
   images: {
-    domains: [
-      'notion.so',
-      'www.notion.so',
-      'prod-files-secure.s3.us-west-2.amazonaws.com',
-      's3.us-west-2.amazonaws.com',
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      }
     ],
+    unoptimized: true,
     minimumCacheTTL: 60,
   },
   

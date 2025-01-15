@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from '@/src/lib/types';
 
 interface NavigationProps {
@@ -12,20 +12,6 @@ interface NavigationProps {
 
 // 添加视图类型
 type ViewMode = 'grid' | 'compact' | 'list';
-
-// 添加拖拽相关的类型
-interface DragItem {
-  id: string;
-  category: string;
-  index: number;
-}
-
-interface MemoizedLinkProps {
-  link: Link;
-  viewMode: ViewMode;
-  getActualLink: (link: Link) => string;
-  index?: number;
-}
 
 export default function Navigation({ links, icon, cover, title }: NavigationProps) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -102,7 +88,8 @@ export default function Navigation({ links, icon, cover, title }: NavigationProp
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      const res = await fetch('/api/revalidate');
+      const token = process.env.NEXT_PUBLIC_REVALIDATE_TOKEN;
+      const res = await fetch(`/api/revalidate?token=${token}`);
       const data = await res.json();
       if (data.revalidated) {
         window.location.reload();
@@ -120,64 +107,6 @@ export default function Navigation({ links, icon, cover, title }: NavigationProp
       localStorage.setItem('viewMode', viewMode);
     }
   }, [viewMode, isClient]);
-
-  // 视图切换按钮
-  const ViewModeButton = () => (
-    <button
-      onClick={() => {
-        setViewMode(current => {
-          switch (current) {
-            case 'grid': return 'compact';
-            case 'compact': return 'list';
-            default: return 'grid';
-          }
-        });
-      }}
-      title={`切换到${viewMode === 'grid' ? '紧凑' : viewMode === 'compact' ? '列表' : '网格'}视图`}
-      className="flex items-center justify-center w-8 h-8
-               rounded-lg
-               bg-gray-100 dark:bg-gray-700
-               text-gray-600 dark:text-gray-300
-               hover:bg-gray-200 dark:hover:bg-gray-600
-               transition-colors"
-    >
-      <svg
-        className={`w-4 h-4 ${
-          viewMode === 'grid' 
-            ? 'text-blue-500' 
-            : viewMode === 'compact'
-              ? 'text-green-500'
-              : 'text-gray-400'
-        }`}
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        {viewMode === 'grid' ? (
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
-          />
-        ) : viewMode === 'compact' ? (
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M4 5h16M4 8h16M4 11h16M4 14h16M4 17h16M4 20h16"
-          />
-        ) : (
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M4 6h16M4 10h16M4 14h16M4 18h16"
-          />
-        )}
-      </svg>
-    </button>
-  );
 
   // 链接卡片区域的布局
   const getLayoutClasses = () => {
@@ -231,103 +160,121 @@ export default function Navigation({ links, icon, cover, title }: NavigationProp
     }
   };
 
+  // 在 Navigation 组件内添加图标错误处理函数
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>, title: string) => {
+    const target = e.target as HTMLImageElement;
+    const parent = target.parentElement;
+    if (parent) {
+      // 根据标题生成渐变背景色
+      const gradients = [
+        'from-blue-500 to-indigo-500',
+        'from-green-500 to-emerald-500',
+        'from-purple-500 to-pink-500',
+        'from-orange-500 to-red-500',
+        'from-pink-500 to-rose-500',
+        'from-indigo-500 to-violet-500',
+      ];
+      const gradientIndex = title.charCodeAt(0) % gradients.length;
+      const gradientClass = gradients[gradientIndex];
+
+      parent.className = `${parent.className.split(' ')[0]} bg-gradient-to-br ${gradientClass} flex items-center justify-center`;
+      parent.innerHTML = `<span class="text-lg font-medium text-white transform">${title[0].toUpperCase()}</span>`;
+    }
+  };
+
   // 只保留一个 MemoizedLink 组件定义
   const MemoizedLink = React.memo(({ link, viewMode, getActualLink, index }: MemoizedLinkProps) => {
-    return (
-      <div className={getLinkClasses()}>
-        <a
-          href={getActualLink(link)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block w-full h-full"
-          draggable="false"
-        >
-          {viewMode === 'grid' ? (
-            <div className="flex flex-col items-center">
-              {/* 图标部分 */}
-              {link.icon ? (
-                <img 
-                  src={link.icon} 
-                  alt=""
-                  className="w-16 h-16 rounded-lg shadow-sm
-                           group-hover:shadow group-hover:scale-105
-                           transition-all duration-300"
-                  draggable="false"
-                />
-              ) : (
-                <div className="w-16 h-16 rounded-lg
-                             bg-gradient-to-br from-gray-100 to-gray-50
-                             dark:from-gray-700 dark:to-gray-600
-                             group-hover:from-blue-50 group-hover:to-blue-100
-                             dark:group-hover:from-blue-900/50 dark:group-hover:to-blue-800/50
-                             flex items-center justify-center
-                             shadow-sm group-hover:shadow group-hover:scale-105
-                             transition-all duration-300">
-                  <span className="text-2xl font-bold 
-                                text-gray-400 dark:text-gray-500
-                                group-hover:text-blue-500 dark:group-hover:text-blue-400">
-                    {link.title[0]}
-                  </span>
-                </div>
-              )}
-              {/* 文字部分 */}
-              <div className="mt-4 text-center w-full">
-                <h3 className={`
-                  font-medium text-gray-900 dark:text-white
-                  group-hover:text-blue-500 dark:group-hover:text-blue-400
-                  text-base truncate
-                `}>
-                  {link.title}
-                </h3>
-                <p className={`
-                  text-sm text-gray-500 dark:text-gray-400 mt-1 truncate
-                  group-hover:text-blue-500/70 dark:group-hover:text-blue-400/70
-                `}>
-                  {link.description}
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center w-full">
-              <div className="flex items-center">
-                {/* 图标部分 */}
-                {link.icon ? (
-                  <img 
-                    src={link.icon} 
-                    alt=""
-                    className="w-6 h-6 rounded shrink-0"
-                  />
-                ) : (
-                  <div className="w-6 h-6 rounded bg-gray-100 dark:bg-gray-700
-                               flex items-center justify-center shrink-0">
-                    <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                      {link.title[0]}
+    const linkClasses = getLinkClasses();
+    const actualLink = getActualLink(link);
+
+    const renderIcon = (size: string) => {
+      const containerClass = `${size} relative flex-shrink-0 rounded-lg overflow-hidden
+                             transition-all duration-300
+                             hover:scale-105`;
+
+      if (link.icon) {
+        return (
+          <div className={`${containerClass} bg-white dark:bg-gray-800`}>
+            <img
+              src={link.icon}
+              alt=""
+              className="w-full h-full object-contain p-1"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.parentElement?.classList.add('fallback-icon');
+                target.style.display = 'none';
+                target.parentElement!.innerHTML = `
+                  <div class="w-full h-full flex items-center justify-center border-2 rounded-lg bg-gray-50 dark:bg-gray-800" style="border-color: #4981f3">
+                    <span class="text-2xl font-bold" style="color: #4981f3">
+                      ${link.title[0].toUpperCase()}
                     </span>
                   </div>
-                )}
-
-                {/* 文字部分 */}
-                <div className={`
-                  min-w-0 ml-3 flex-1
-                `}>
-                  <h3 className={`
-                    font-medium text-gray-900 dark:text-white
-                    group-hover:text-gray-500 dark:group-hover:text-gray-400
-                    text-sm truncate`
-                  }>
-                    {link.title}
-                  </h3>
-                  <span className="text-sm text-gray-500 dark:text-gray-400 shrink-0">
-                    {link.description}
-                  </span>
-                </div>
-              </div>
+                `;
+              }}
+              loading="lazy"
+            />
+          </div>
+        );
+      } else {
+        // 无图标时显示蓝色边框和文字
+        return (
+          <div className={containerClass}>
+            <div className="w-full h-full flex items-center justify-center border-2 rounded-lg bg-gray-50 dark:bg-gray-800" 
+                 style={{ borderColor: '#4981f3' }}>
+              <span className="text-2xl font-bold" 
+                    style={{ color: '#4981f3' }}>
+                {link.title[0].toUpperCase()}
+              </span>
             </div>
-          )}
-        </a>
-      </div>
+          </div>
+        );
+      }
+    };
+
+    return (
+      <a
+        href={actualLink}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={linkClasses}
+        data-category={link.category}
+        data-index={index}
+      >
+        {viewMode === 'grid' ? (
+          <>
+            {renderIcon('w-14 h-14 mb-3')}
+            <h3 className="font-medium text-gray-900 dark:text-white mb-1 text-center">
+              {link.title}
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 text-center line-clamp-2">
+              {link.description}
+            </p>
+          </>
+        ) : viewMode === 'compact' ? (
+          <>
+            {renderIcon('w-10 h-10 mr-3')}
+            <div className="flex-1 min-w-0">
+              <h3 className="font-medium text-gray-900 dark:text-white truncate">
+                {link.title}
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                {link.description}
+              </p>
+            </div>
+          </>
+        ) : (
+          <>
+            {renderIcon('w-8 h-8 mr-3')}
+            <span className="font-medium text-gray-900 dark:text-white truncate">
+              {link.title}
+            </span>
+          </>
+        )}
+      </a>
     );
   });
+
+  MemoizedLink.displayName = 'MemoizedLink';
 
   return (
     <div className={`flex bg-white dark:bg-gray-900 min-h-screen`}>
@@ -471,7 +418,60 @@ export default function Navigation({ links, icon, cover, title }: NavigationProp
               </button>
 
               {/* 视图切换按钮 */}
-              <ViewModeButton />
+              <button
+                onClick={() => {
+                  setViewMode(current => {
+                    switch (current) {
+                      case 'grid': return 'compact';
+                      case 'compact': return 'list';
+                      default: return 'grid';
+                    }
+                  });
+                }}
+                title={`切换到${viewMode === 'grid' ? '紧凑' : viewMode === 'compact' ? '列表' : '网格'}视图`}
+                className="flex items-center justify-center w-8 h-8
+                         rounded-lg
+                         bg-gray-100 dark:bg-gray-700
+                         text-gray-600 dark:text-gray-300
+                         hover:bg-gray-200 dark:hover:bg-gray-600
+                         transition-colors"
+              >
+                <svg
+                  className={`w-4 h-4 ${
+                    viewMode === 'grid' 
+                      ? 'text-blue-500' 
+                      : viewMode === 'compact'
+                        ? 'text-green-500'
+                        : 'text-gray-400'
+                  }`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  {viewMode === 'grid' ? (
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+                    />
+                  ) : viewMode === 'compact' ? (
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 5h16M4 8h16M4 11h16M4 14h16M4 17h16M4 20h16"
+                    />
+                  ) : (
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 6h16M4 10h16M4 14h16M4 18h16"
+                    />
+                  )}
+                </svg>
+              </button>
             </div>
           )}
         </div>
