@@ -1,9 +1,9 @@
 import { cache } from './cache';
 import { Client } from '@notionhq/client';
-import { DatabaseObjectResponse, GetDatabaseResponse } from '@notionhq/client/build/src/api-endpoints';
+import { DatabaseObjectResponse } from '@notionhq/client/build/src/api-endpoints';
 
 const notion = new Client({
-  auth: process.env.NOTION_TOKEN,
+  auth: process.env.NOTION_API_KEY,
   timeoutMs: 30000,
 });
 
@@ -86,9 +86,8 @@ export async function getLinks(): Promise<Link[]> {
     const sortedLinks = links.sort((a, b) => {
       const orderA = categoryOrder[a.category] ?? 999;
       const orderB = categoryOrder[b.category] ?? 999;
-      
-      if (orderA !== orderB) return orderA - orderB;
-      return a.title.localeCompare(b.title, 'zh-CN');
+      // 小的排前面
+      return orderA - orderB;
     });
 
     cache.set(cacheKey, sortedLinks);

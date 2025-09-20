@@ -21,7 +21,7 @@ interface MemoizedLinkProps {
   index: number;
 }
 
-export default function Navigation({ links, icon, cover, title }: NavigationProps) {
+export default function Navigation({ links: initialLinks, icon: initialIcon, cover: initialCover, title: initialTitle }: NavigationProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -29,6 +29,12 @@ export default function Navigation({ links, icon, cover, title }: NavigationProp
   const [isClient, setIsClient] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [isMounted, setIsMounted] = useState(false);
+  const [links, setLinks] = useState<Link[]>(initialLinks);
+  const [databaseInfo, setDatabaseInfo] = useState({
+    icon: initialIcon,
+    cover: initialCover,
+    title: initialTitle
+  });
 
   useEffect(() => {
     setIsClient(true);
@@ -104,6 +110,75 @@ export default function Navigation({ links, icon, cover, title }: NavigationProp
       }
     } catch (error) {
       console.error('Refresh failed:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  // 重新获取链接数据
+  const fetchLatestLinks = async (): Promise<Link[]> => {
+    const response = await fetch('/api/links', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      cache: 'no-cache', // 确保获取最新数据
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch links');
+    }
+    
+    const data = await response.json();
+    return data.links;
+  };
+
+  // 重新获取数据库信息
+  const fetchLatestDatabaseInfo = async () => {
+    const response = await fetch('/api/database-info', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      cache: 'no-cache', // 确保获取最新数据
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch database info');
+    }
+    
+    const data = await response.json();
+    return data.databaseInfo;
+  };
+
+  // 清除本地缓存处理函数
+  const handleCacheRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      // 1. 清除本地缓存
+      const clearResponse = await fetch('/api/cache/clear', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!clearResponse.ok) {
+        throw new Error('Failed to clear cache');
+      }
+      
+      // 2. 并行获取最新数据
+      const [latestLinks, latestDatabaseInfo] = await Promise.all([
+        fetchLatestLinks(),
+        fetchLatestDatabaseInfo()
+      ]);
+      
+      // 3. 更新组件状态
+      setLinks(latestLinks);
+      setDatabaseInfo(latestDatabaseInfo);
+      
+    } catch (error) {
+      console.error('Error refreshing cache:', error);
     } finally {
       setIsRefreshing(false);
     }
@@ -309,9 +384,9 @@ export default function Navigation({ links, icon, cover, title }: NavigationProp
               disabled={isRefreshing}
               className="flex items-center gap-3 hover:opacity-80 transition-all group"
             >
-              {icon ? (
+              {databaseInfo.icon ? (
                 <img 
-                  src={icon} 
+                  src={databaseInfo.icon} 
                   alt="Logo" 
                   className={`w-8 h-8 rounded-lg ${isRefreshing ? 'animate-spin' : ''}`}
                 />
@@ -331,7 +406,7 @@ export default function Navigation({ links, icon, cover, title }: NavigationProp
                 </svg>
               )}
               <h1 className="text-lg font-bold text-gray-800 dark:text-white group-hover:text-blue-500">
-                {title}
+                {databaseInfo.title}
               </h1>
             </button>
           </div>
@@ -479,6 +554,34 @@ export default function Navigation({ links, icon, cover, title }: NavigationProp
                   )}
                 </svg>
               </button>
+
+              {/* 缓存刷新按钮 */}
+              <button
+                onClick={handleCacheRefresh}
+                disabled={isRefreshing}
+                title="刷新缓存"
+                className="flex items-center justify-center w-8 h-8
+                         rounded-lg
+                         bg-gray-100 dark:bg-gray-700
+                         text-gray-600 dark:text-gray-300
+                         hover:bg-gray-200 dark:hover:bg-gray-600
+                         transition-colors
+                         disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <svg
+                  className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-blue-500' : 'text-gray-400'}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
+              </button>
             </div>
           )}
         </div>
@@ -521,7 +624,32 @@ export default function Navigation({ links, icon, cover, title }: NavigationProp
         </div>
 
         {/* 链接卡片区域 */}
-        <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="max-w-7xl mx-auto px-4 py-8 relative">
+          {/* 刷新加载覆盖层 */}
+          {isRefreshing && (
+            <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm 
+                          flex items-center justify-center z-10 rounded-lg">
+              <div className="flex flex-col items-center gap-3">
+                <svg
+                  className="w-8 h-8 animate-spin text-blue-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  正在刷新数据...
+                </span>
+              </div>
+            </div>
+          )}
+          
           {Object.entries(groupedLinks).map(([category, links]) => (
             <section 
               key={category} 
