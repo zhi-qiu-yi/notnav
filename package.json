@@ -6,6 +6,7 @@
     "dev": "cross-env NODE_NO_WARNINGS=1 next dev",
     "build": "cross-env NODE_NO_WARNINGS=1 next build",
     "start": "cross-env NODE_NO_WARNINGS=1 next start",
+    "prod": "cross-env next build && cross-env next start",
     "lint": "next lint"
   },
   "dependencies": {
