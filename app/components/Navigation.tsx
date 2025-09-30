@@ -261,7 +261,7 @@ export default function Navigation({ links: initialLinks, icon: initialIcon, cov
       const gradientClass = gradients[gradientIndex];
 
       parent.className = `${parent.className.split(' ')[0]} bg-gradient-to-br ${gradientClass} flex items-center justify-center`;
-      parent.innerHTML = `<span class="text-lg font-medium text-white transform">${title[0].toUpperCase()}</span>`;
+      parent.innerHTML = `<span class="text-lg font-medium text-white transform">${title[0]?.toUpperCase()}</span>`;
     }
   };
 
@@ -289,7 +289,7 @@ export default function Navigation({ links: initialLinks, icon: initialIcon, cov
                 target.parentElement!.innerHTML = `
                   <div class="w-full h-full flex items-center justify-center border-2 rounded-lg bg-gray-50 dark:bg-gray-800" style="border-color: #4981f3">
                     <span class="text-2xl font-bold" style="color: #4981f3">
-                      ${link.title[0].toUpperCase()}
+                      ${link.title[0]?.toUpperCase()}
                     </span>
                   </div>
                 `;
@@ -305,7 +305,7 @@ export default function Navigation({ links: initialLinks, icon: initialIcon, cov
                  style={{ borderColor: '#4981f3' }}>
               <span className="text-2xl font-bold" 
                     style={{ color: '#4981f3' }}>
-                {link.title[0].toUpperCase()}
+                {link.title[0]?.toUpperCase()}
               </span>
             </div>
           </div>
